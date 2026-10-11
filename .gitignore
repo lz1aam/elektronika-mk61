@@ -1,0 +1,21 @@
+# CMake and IDE output
+/build*/
+/.cache/
+*.user
+*.autosave
+compile_commands.json
+
+# Full upstream checkouts are audit inputs, not project dependencies.
+/upstream/
+
+# Local research, verification, and agent instructions are not published.
+/docs/
+/tests/
+/.tests/
+/resources/reference/
+/AGENTS.md
+
+# Local agent/runtime metadata
+/.agents/
+/.aws/
+/.codex/

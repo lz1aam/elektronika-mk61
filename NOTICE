@@ -1,0 +1,29 @@
+Elektronika MK-61 Emulator is an independent native Linux port. It is not endorsed by or
+affiliated with the PMK-Android or EMU145 maintainers.
+
+Portions of src/core and the ROM tables are adapted from EMU145:
+
+  Emulator Copyright (c) 2012 Felix Lazarev <me@felixl.com>
+  ROM Content Copyright (c) 198x Trokhimenko Y.K. and others
+
+The EMU145 source headers state that the emulator is licensed under GNU GPL
+version 3. The ROM notice names additional historical copyright holders but
+does not separately explain the ROMs' redistribution authority. That
+uncertainty is intentionally preserved and must be resolved before a public
+binary release.
+
+PMK-Android identifies itself as GPL-3.0. Its unmodified symbol font is
+included from commit `100eea1e325fcf85f0d029780b9c079793a73075` and has no
+separate embedded copyright/license notice. The former digital-display font
+and Fastlane reference screenshots are not redistributed.
+
+Rejected experimental GOST-derived fonts and the locally supplied standards
+scan are not distributed as application assets. No commercial digital GOST
+font is incorporated. Local historical research material is not included in
+the published source tree.
+
+The application embeds unmodified DejaVu Sans Condensed Regular and Bold for
+the currently restored deterministic panel typography. Copyright (c) 2003
+Bitstream, Inc.; the complete Bitstream/DejaVu licence is included in
+resources/fonts/DejaVu-LICENSE.txt.
+

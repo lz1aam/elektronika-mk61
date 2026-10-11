@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Elektronika MK-61 Emulator
+Name[bg]=Електроника МК-61 — емулатор
+GenericName=Programmable Calculator
+GenericName[bg]=Програмируем калкулатор
+Comment=Native Elektronika MK-61 and MK-54 microcode emulator
+Comment[bg]=Нативен микрокодов емулатор на Електроника МК-61 и МК-54
+Exec=elektronika-mk61
+Icon=elektronika-mk61
+Terminal=false
+StartupNotify=true
+StartupWMClass=elektronika-mk61
+Categories=Utility;Calculator;
+Keywords=calculator;RPN;MK-61;MK-54;Elektronika;

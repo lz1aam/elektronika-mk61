@@ -1,0 +1,18 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt 6 build dependencies
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+      - name: Build
+        run: cmake --build build -j 2
+

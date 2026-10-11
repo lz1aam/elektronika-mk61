@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="elektronika-mk61.svg">icons/elektronika-mk61.svg</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file alias="DejaVuSansCondensed.ttf">fonts/DejaVuSansCondensed.ttf</file>
+        <file alias="DejaVuSansCondensed-Bold.ttf">fonts/DejaVuSansCondensed-Bold.ttf</file>
+        <file alias="missing-symbols.ttf">fonts/missing-symbols.ttf</file>
+    </qresource>
+</RCC>

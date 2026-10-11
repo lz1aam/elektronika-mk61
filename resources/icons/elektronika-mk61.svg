@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Elektronika MK-61 Emulator</title>
+  <desc>Stylized Elektronika MK-61 calculator with cyan VFD and 5 by 6 keyboard</desc>
+  <defs>
+    <linearGradient id="case" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#155d6b"/>
+      <stop offset="0.12" stop-color="#123943"/>
+      <stop offset="0.2" stop-color="#292d2e"/>
+      <stop offset="0.82" stop-color="#171a1b"/>
+      <stop offset="1" stop-color="#0a3038"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4a49"/>
+      <stop offset="1" stop-color="#323333"/>
+    </linearGradient>
+    <linearGradient id="key" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0f1ed"/>
+      <stop offset="1" stop-color="#b8bbb7"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Tall, slightly tapered silhouette of the physical calculator. -->
+  <path d="M132 24h248l24 34v402l-28 28H136l-28-28V58z"
+        fill="url(#case)" stroke="#07191d" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M143 42h226l17 25v378l-18 22H144l-18-22V67z"
+        fill="url(#panel)" stroke="#53737a" stroke-width="3"/>
+
+  <!-- Dark smoked glass with cyan-green VFD segments. -->
+  <rect x="151" y="65" width="210" height="92" rx="8"
+        fill="#031217" stroke="#101f22" stroke-width="5"/>
+  <path d="M158 74h196M158 147h196" stroke="#17404a" stroke-width="2" opacity=".7"/>
+  <g fill="#37eff0" filter="url(#glow)">
+    <!-- digit 6 -->
+    <path d="M188 82l9-7h38l6 7-8 7h-34z"/>
+    <path d="M184 88l7-6 7 8-4 22-8 6-6-7z"/>
+    <path d="M179 121l8-7 7 7-4 22-8 6-6-7z"/>
+    <path d="M184 150l8-7h35l7 7-9 7h-35z"/>
+    <path d="M229 119l7-6 7 7-4 23-8 6-6-7z"/>
+    <path d="M186 117l8-7h35l7 7-8 7h-35z"/>
+    <!-- digit 1 -->
+    <path d="M295 88l7-6 7 7-4 23-8 6-6-7z"/>
+    <path d="M290 121l7-7 7 7-4 22-8 6-6-7z"/>
+    <circle cx="326" cy="148" r="5"/>
+  </g>
+
+  <!-- Switch row. -->
+  <rect x="158" y="177" width="70" height="15" rx="4" fill="#090b0c" stroke="#60605d" stroke-width="2"/>
+  <rect x="197" y="178" width="28" height="13" rx="3" fill="#303130"/>
+  <rect x="280" y="177" width="76" height="15" rx="4" fill="#090b0c" stroke="#60605d" stroke-width="2"/>
+  <rect x="305" y="178" width="28" height="13" rx="3" fill="#795a32"/>
+
+  <!-- Six-by-five keyboard; color positions mirror the MK-61. -->
+  <g stroke="#101212" stroke-width="4">
+    <g fill="#111314">
+      <rect x="190" y="214" width="38" height="31" rx="5"/>
+      <rect x="233" y="214" width="38" height="31" rx="5"/>
+      <rect x="276" y="214" width="38" height="31" rx="5"/>
+      <rect x="319" y="214" width="38" height="31" rx="5"/>
+      <rect x="190" y="255" width="38" height="31" rx="5"/>
+      <rect x="233" y="255" width="38" height="31" rx="5"/>
+      <rect x="276" y="255" width="38" height="31" rx="5"/>
+      <rect x="319" y="255" width="38" height="31" rx="5"/>
+    </g>
+    <rect x="147" y="214" width="38" height="31" rx="5" fill="#ece632"/>
+    <rect x="147" y="255" width="38" height="31" rx="5" fill="#2fc2d7"/>
+    <g fill="url(#key)">
+      <rect x="147" y="296" width="38" height="31" rx="5"/>
+      <rect x="190" y="296" width="38" height="31" rx="5"/>
+      <rect x="233" y="296" width="38" height="31" rx="5"/>
+      <rect x="276" y="296" width="38" height="31" rx="5"/>
+      <rect x="319" y="296" width="38" height="31" rx="5"/>
+      <rect x="147" y="337" width="38" height="31" rx="5"/>
+      <rect x="190" y="337" width="38" height="31" rx="5"/>
+      <rect x="233" y="337" width="38" height="31" rx="5"/>
+      <rect x="276" y="337" width="38" height="31" rx="5"/>
+      <rect x="319" y="337" width="38" height="31" rx="5"/>
+      <rect x="147" y="378" width="38" height="31" rx="5"/>
+      <rect x="190" y="378" width="38" height="31" rx="5"/>
+      <rect x="233" y="378" width="38" height="31" rx="5"/>
+      <rect x="276" y="378" width="38" height="31" rx="5"/>
+      <rect x="319" y="378" width="38" height="31" rx="5"/>
+      <rect x="147" y="419" width="38" height="31" rx="5"/>
+      <rect x="190" y="419" width="38" height="31" rx="5"/>
+      <rect x="233" y="419" width="38" height="31" rx="5"/>
+      <rect x="276" y="419" width="38" height="31" rx="5"/>
+    </g>
+    <rect x="319" y="419" width="38" height="31" rx="5" fill="#e52332"/>
+  </g>
+
+  <!-- Minimal key marks survive down to task-switcher sizes. -->
+  <g fill="#151718">
+    <circle cx="166" cy="312" r="5"/><circle cx="209" cy="312" r="5"/><circle cx="252" cy="312" r="5"/><circle cx="295" cy="312" r="5"/><path d="M331 309h14v6h-14z"/>
+    <circle cx="166" cy="353" r="5"/><circle cx="209" cy="353" r="5"/><circle cx="252" cy="353" r="5"/><circle cx="295" cy="353" r="5"/><path d="M331 350h14v6h-14z"/>
+    <circle cx="166" cy="394" r="5"/><circle cx="209" cy="394" r="5"/><circle cx="252" cy="394" r="5"/><circle cx="295" cy="394" r="5"/><path d="M331 391h14v6h-14z"/>
+    <circle cx="166" cy="435" r="5"/><circle cx="209" cy="435" r="4"/><path d="M245 430h14v10h-14z"/><path d="M288 432h14v6h-14z"/>
+  </g>
+</svg>
