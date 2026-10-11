@@ -3,7 +3,9 @@
 Native Linux emulation of the Soviet **Elektronika MK-61** and **MK-54**
 programmable RPN calculators, written in C++20 and Qt 6.
 
-![Elektronika MK-61 Emulator](resources/screenshots/elektronika-mk61.png)
+| Original display | Expanded four-row VFD stack |
+|:--:|:--:|
+| <img src="resources/screenshots/elektronika-mk61.png" alt="Elektronika MK-61 Emulator" width="360"> | <img src="resources/screenshots/elektronika-mk61-stack.png" alt="Elektronika MK-61 Emulator with expanded T/Z/Y/X display" width="360"> |
 
 The application executes the original IK13xx microcode model instead of using
 modern floating-point calculator logic. Its keyboard matrix, angle selector,
@@ -37,6 +39,39 @@ cmake --build build -j
 ```
 
 Install for the current user:
+
+```sh
+./install.sh
+```
+
+This installs the executable as `~/.local/bin/elektronika-mk61`, the launcher
+under `~/.local/share/applications`, and the icon under
+`~/.local/share/icons/hicolor`. The desktop and icon caches are refreshed
+automatically when the corresponding cache utilities are available. The
+launcher follows the freedesktop/XDG layout and does not depend on GNOME, KDE
+Plasma, XFCE, LXQt, or another particular desktop environment. Menus normally
+notice the new entry automatically; if a running session keeps an old menu
+cache, sign out and back in once.
+
+The application can always be started directly with:
+
+```sh
+"$HOME/.local/bin/elektronika-mk61"
+```
+
+The launcher is generated during installation, so its absolute executable
+path follows the selected prefix. To install under another absolute prefix,
+pass it as the first argument, for example `./install.sh /opt/elektronika-mk61`
+(a system prefix may require administrator privileges).
+
+Uninstall the current-user installation with:
+
+```sh
+./uninstall.sh
+```
+
+Both scripts are desktop-independent convenience wrappers. The equivalent
+standard CMake installation remains available:
 
 ```sh
 cmake --install build --prefix "$HOME/.local"

@@ -1,0 +1,56 @@
+set(PMK_INSTALL_BINDIR "@CMAKE_INSTALL_BINDIR@")
+set(PMK_INSTALL_DATADIR "@CMAKE_INSTALL_DATADIR@")
+
+if(IS_ABSOLUTE "${PMK_INSTALL_BINDIR}")
+    set(PMK_EXECUTABLE "${PMK_INSTALL_BINDIR}/elektronika-mk61")
+else()
+    set(PMK_EXECUTABLE
+        "${CMAKE_INSTALL_PREFIX}/${PMK_INSTALL_BINDIR}/elektronika-mk61")
+endif()
+
+if(IS_ABSOLUTE "${PMK_INSTALL_DATADIR}")
+    set(PMK_APPLICATIONS_DIR "${PMK_INSTALL_DATADIR}/applications")
+else()
+    set(PMK_APPLICATIONS_DIR
+        "${CMAKE_INSTALL_PREFIX}/${PMK_INSTALL_DATADIR}/applications")
+endif()
+
+configure_file(
+    "@CMAKE_CURRENT_BINARY_DIR@/elektronika-mk61.desktop.in"
+    "@CMAKE_CURRENT_BINARY_DIR@/elektronika-mk61.desktop"
+    @ONLY
+)
+file(INSTALL
+    DESTINATION "${PMK_APPLICATIONS_DIR}"
+    TYPE FILE
+    FILES "@CMAKE_CURRENT_BINARY_DIR@/elektronika-mk61.desktop"
+)
+
+# These cache helpers are optional. The executable, freedesktop launcher and
+# hicolor icon do not depend on any particular desktop environment.
+if(NOT DEFINED ENV{DESTDIR})
+    if(IS_ABSOLUTE "${PMK_INSTALL_DATADIR}")
+        set(PMK_DATA_ROOT "${PMK_INSTALL_DATADIR}")
+    else()
+        set(PMK_DATA_ROOT
+            "${CMAKE_INSTALL_PREFIX}/${PMK_INSTALL_DATADIR}")
+    endif()
+
+    find_program(UPDATE_DESKTOP_DATABASE update-desktop-database)
+    if(UPDATE_DESKTOP_DATABASE)
+        execute_process(
+            COMMAND "${UPDATE_DESKTOP_DATABASE}"
+                    "${PMK_DATA_ROOT}/applications"
+            ERROR_QUIET
+        )
+    endif()
+
+    find_program(GTK_UPDATE_ICON_CACHE gtk-update-icon-cache)
+    if(GTK_UPDATE_ICON_CACHE)
+        execute_process(
+            COMMAND "${GTK_UPDATE_ICON_CACHE}" --force --ignore-theme-index
+                    "${PMK_DATA_ROOT}/icons/hicolor"
+            ERROR_QUIET
+        )
+    endif()
+endif()

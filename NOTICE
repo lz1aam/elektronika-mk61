@@ -17,11 +17,6 @@ included from commit `100eea1e325fcf85f0d029780b9c079793a73075` and has no
 separate embedded copyright/license notice. The former digital-display font
 and Fastlane reference screenshots are not redistributed.
 
-Rejected experimental GOST-derived fonts and the locally supplied standards
-scan are not distributed as application assets. No commercial digital GOST
-font is incorporated. Local historical research material is not included in
-the published source tree.
-
 The application embeds unmodified DejaVu Sans Condensed Regular and Bold for
 the currently restored deterministic panel typography. Copyright (c) 2003
 Bitstream, Inc.; the complete Bitstream/DejaVu licence is included in

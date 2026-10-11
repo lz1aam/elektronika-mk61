@@ -6,6 +6,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
+include(GNUInstallDirs)
+
+configure_file(
+    packaging/elektronika-mk61.desktop.in
+    ${CMAKE_CURRENT_BINARY_DIR}/elektronika-mk61.desktop.in
+    COPYONLY
+)
+configure_file(
+    packaging/install-desktop.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/install-desktop.cmake
+    @ONLY
+)
 
 set(PMK_LOCAL_TESTS OFF)
 if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests")
@@ -141,11 +153,10 @@ if(Qt6Widgets_FOUND)
             TIMEOUT 10
         )
     endif()
-    install(TARGETS elektronika-mk61 RUNTIME DESTINATION bin)
-    install(FILES packaging/elektronika-mk61.desktop
-        DESTINATION share/applications)
+    install(TARGETS elektronika-mk61 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES resources/icons/elektronika-mk61.svg
-        DESTINATION share/icons/hicolor/scalable/apps)
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+    install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/install-desktop.cmake)
 else()
     message(WARNING "Qt 6 Widgets development package not found; native GUI target is disabled")
 endif()
