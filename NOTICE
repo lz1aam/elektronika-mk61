@@ -6,11 +6,14 @@ Portions of src/core and the ROM tables are adapted from EMU145:
   Emulator Copyright (c) 2012 Felix Lazarev <me@felixl.com>
   ROM Content Copyright (c) 198x Trokhimenko Y.K. and others
 
-The EMU145 source headers state that the emulator is licensed under GNU GPL
-version 3. The ROM notice names additional historical copyright holders but
-does not separately explain the ROMs' redistribution authority. That
-uncertainty is intentionally preserved and must be resolved before a public
-binary release.
+The EMU145 files containing the ROM tables place the ROM copyright notice in
+the same header as the GNU GPL version 3 grant for "this program". This project
+therefore relies on EMU145's explicit representation that those complete files,
+including their embedded tables, are redistributable under GPL-3.0. No separate
+ROM licence, assignment, or provenance record identifying "others" was found,
+so the historical chain of title has not been independently verified. The ROM
+content is not claimed to be public domain. Binary redistributors should review
+this provenance and satisfy the GPL source and notice obligations themselves.
 
 PMK-Android identifies itself as GPL-3.0. Its unmodified symbol font is
 included from commit `100eea1e325fcf85f0d029780b9c079793a73075` and has no

@@ -10,7 +10,6 @@ compile_commands.json
 
 # Local research, verification, and agent instructions are not published.
 /docs/
-/tests/
 /.tests/
 /resources/reference/
 /AGENTS.md

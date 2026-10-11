@@ -89,6 +89,7 @@ four-row stack view. While powered off, click the model name to switch model.
 The project is licensed under the [GNU GPL version 3](LICENSE). It contains
 adapted GPL-3.0 code and assets from
 [EMU145](https://github.com/fixelsan/emu145) and
-[PMK-Android](https://github.com/xvadim/pmk-android). Historical ROM ownership
-has an unresolved provenance caveat; read [NOTICE](NOTICE) before distributing
-binaries. Contributions are described in [CONTRIBUTING.md](CONTRIBUTING.md).
+[PMK-Android](https://github.com/xvadim/pmk-android). EMU145's ROM-bearing files
+carry GPL-3.0 headers, while their older chain of title is not independently
+documented; read [NOTICE](NOTICE) before distributing binaries. Contributions
+are described in [CONTRIBUTING.md](CONTRIBUTING.md).

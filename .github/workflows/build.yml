@@ -12,7 +12,7 @@ jobs:
       - name: Install Qt 6 build dependencies
         run: sudo apt-get update && sudo apt-get install -y qt6-base-dev
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build -j 2
 

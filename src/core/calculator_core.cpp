@@ -279,8 +279,14 @@ std::string CalculatorCore::displayGlyphText() const {
 void CalculatorCore::alignProgramMemory() {
     // Java imports at IR2_1.microtick == 84. One Java nibble tick is four
     // EMU145 bit ticks, and the delay-memory head advances once per bit tick.
+    // The complete MK-61 ring has five devices, so the same IR2 bit position
+    // occurs at five different page phases. Program addresses are valid only
+    // at the register-dump phase (the same phase used for stack snapshots).
     constexpr std::uint64_t alignedBit = 84U * 4U;
-    while (ticks_ % DelayMemory::BitLength != alignedBit)
+    const unsigned phaseCount = model_ == CalculatorModel::MK61 ? 5U : 7U;
+    const unsigned alignedPhase = phaseCount - 1U;
+    while (ticks_ % DelayMemory::BitLength != alignedBit ||
+           memorySyncCounter_ != alignedPhase)
         tick();
 }
 
