@@ -4,6 +4,7 @@
 #include "keymap.hpp"
 
 #include <QWidget>
+#include <QElapsedTimer>
 #include <QString>
 #include <QSize>
 
@@ -28,6 +29,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
     void keyReleaseEvent(QKeyEvent*) override;
+    void focusOutEvent(QFocusEvent*) override;
 
 private:
     struct Key {
@@ -56,6 +58,8 @@ private:
     void pressKeyIndex(int index);
     void releaseCurrentKey();
     void toggleStackDisplay();
+    void updateDisplay();
+    bool displayStateChanged();
     QPointF toLogical(const QPointF& position) const;
     int panelOffset() const {
         return stackDisplayExpanded_ ? ExpandedDisplayHeight - DisplayHeight : 0;
@@ -72,6 +76,13 @@ private:
     bool stackDisplayExpanded_{};
     QSize compactSize_;
     QTimer* timer_{};
+    QElapsedTimer emulationClock_;
+    qint64 tickRemainder_{};
+    bool repaintPhase_{};
+    bool displayStateInitialized_{};
+    unsigned displayRefreshFrames_{};
+    std::array<std::uint8_t, 12> lastDisplayCodes_{};
+    std::array<std::array<std::uint8_t, 12>, 4> lastStackCodes_{};
     int pressed_{-1};
 };
 

@@ -323,12 +323,73 @@ CalculatorWidget::CalculatorWidget(QWidget* parent) : QWidget(parent) {
 
     timer_ = new QTimer(this);
     timer_->setTimerType(Qt::PreciseTimer);
+    emulationClock_.start();
     connect(timer_, &QTimer::timeout, this, [this] {
-        if (powered_)
-            core_.advanceTicks(168U * 8U);
-        update();
+        constexpr qint64 NanosecondsPerSecond = 1'000'000'000;
+        constexpr qint64 EmulatedTicksPerSecond = 168'000;
+        constexpr qint64 MaximumCatchUpNanoseconds = 100'000'000;
+        const qint64 elapsed = std::clamp(
+            emulationClock_.nsecsElapsed(), qint64(0),
+            MaximumCatchUpNanoseconds);
+        emulationClock_.restart();
+        if (!powered_)
+            return;
+
+        // Advance from monotonic elapsed time rather than assuming that every
+        // GUI timeout arrived exactly on schedule. A bounded 100 ms catch-up
+        // preserves normal timing without creating a resume-after-suspend
+        // storm. Fractional ticks carry into the next callback.
+        tickRemainder_ += elapsed * EmulatedTicksPerSecond;
+        const auto ticks = static_cast<std::size_t>(
+            tickRemainder_ / NanosecondsPerSecond);
+        tickRemainder_ %= NanosecondsPerSecond;
+        core_.advanceTicks(ticks);
+
+        // Painting the complete panel at the former 125 Hz was needlessly
+        // expensive; cap VFD presentation near 31 Hz.
+        if (displayStateChanged())
+            displayRefreshFrames_ = 3;
+        repaintPhase_ = !repaintPhase_;
+        if (repaintPhase_ && displayRefreshFrames_ != 0) {
+            updateDisplay();
+            --displayRefreshFrames_;
+        }
     });
-    timer_->start(8);
+    timer_->start(16);
+}
+
+bool CalculatorWidget::displayStateChanged() {
+    bool changed = !displayStateInitialized_;
+    const auto& live = core_.displaySegments();
+    if (live != lastDisplayCodes_) {
+        lastDisplayCodes_ = live;
+        changed = true;
+    }
+    if (stackDisplayExpanded_) {
+        const auto& stack = core_.stackDisplaySnapshots();
+        for (std::size_t row = 0; row < stack.size(); ++row) {
+            std::array<std::uint8_t, 12> codes{};
+            for (std::size_t cell = 0; cell < codes.size(); ++cell)
+                codes[cell] = stack[row].cells[cell].code;
+            if (codes != lastStackCodes_[row]) {
+                lastStackCodes_[row] = codes;
+                changed = true;
+            }
+        }
+    }
+    displayStateInitialized_ = true;
+    return changed;
+}
+
+void CalculatorWidget::updateDisplay() {
+    const qreal scale = std::min(width() / qreal(LogicalWidth),
+                                 height() / qreal(logicalHeight()));
+    const QPointF origin((width() - LogicalWidth * scale) / 2.0,
+                         (height() - logicalHeight() * scale) / 2.0);
+    const int displayHeight = stackDisplayExpanded_
+        ? ExpandedDisplayHeight : DisplayHeight;
+    update(QRectF(origin.x(), origin.y(), LogicalWidth * scale,
+                  displayHeight * scale).toAlignedRect());
 }
 
 QPointF CalculatorWidget::toLogical(const QPointF& position) const {
@@ -405,6 +466,12 @@ void CalculatorWidget::setPowered(bool powered) {
     pressed_ = -1;
     fIndicator_ = false;
     kIndicator_ = false;
+    // A power transition changes phosphor excitation even when the decoded
+    // character codes before and after reset happen to be identical.
+    displayStateInitialized_ = false;
+    displayRefreshFrames_ = 3;
+    tickRemainder_ = 0;
+    emulationClock_.restart();
     if (powered_) {
         core_.reset();
         core_.setAngleMode(angleMode_);
@@ -601,14 +668,27 @@ void CalculatorWidget::keyReleaseEvent(QKeyEvent* event) {
     QWidget::keyReleaseEvent(event);
 }
 
-void CalculatorWidget::paintEvent(QPaintEvent*) {
+void CalculatorWidget::focusOutEvent(QFocusEvent* event) {
+    if (pressed_ >= 0)
+        releaseCurrentKey();
+    QWidget::focusOutEvent(event);
+}
+
+void CalculatorWidget::paintEvent(QPaintEvent* event) {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
     p.setRenderHint(QPainter::TextAntialiasing);
     const qreal scale = std::min(width() / qreal(LogicalWidth),
                                  height() / qreal(logicalHeight()));
-    p.translate((width() - LogicalWidth * scale) / 2.0,
-                (height() - logicalHeight() * scale) / 2.0);
+    const QPointF origin((width() - LogicalWidth * scale) / 2.0,
+                         (height() - logicalHeight() * scale) / 2.0);
+    const int activeDisplayHeight = stackDisplayExpanded_
+        ? ExpandedDisplayHeight : DisplayHeight;
+    const QRect displayRect = QRectF(
+        origin.x(), origin.y(), LogicalWidth * scale,
+        activeDisplayHeight * scale).toAlignedRect();
+    const bool displayOnly = displayRect.contains(event->region().boundingRect());
+    p.translate(origin);
     p.scale(scale, scale);
 
     // PMK-Android values/colors.xml: commonBackground and indicatorOff.
@@ -640,6 +720,9 @@ void CalculatorWidget::paintEvent(QPaintEvent*) {
                 labels[row][0], powered_);
         }
     }
+
+    if (displayOnly)
+        return;
 
     p.translate(0, panelOffset());
 
