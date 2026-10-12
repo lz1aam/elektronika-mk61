@@ -106,7 +106,7 @@ void CalculatorCore::reset() {
 }
 
 void CalculatorCore::pressMatrixKey(unsigned row, unsigned column) {
-    hardware_.keyboard().queueContact(row, column);
+    hardware_.keyboard().pressContact(row, column);
 }
 
 void CalculatorCore::setAngleMode(AngleMode mode) {

@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
     QApplication::setApplicationName(QStringLiteral("elektronika-mk61"));
     QApplication::setApplicationDisplayName(
         QStringLiteral("Elektronika MK-61 Emulator"));
+    QApplication::setApplicationVersion(QStringLiteral(PMK_VERSION));
     QApplication app(argc, argv);
     const QIcon applicationIcon(
         QStringLiteral(":/icons/elektronika-mk61.svg"));

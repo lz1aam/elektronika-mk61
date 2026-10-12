@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(elektronika-mk61 VERSION 0.1.0 LANGUAGES CXX)
+project(elektronika-mk61 VERSION 0.1.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -49,6 +49,8 @@ if(Qt6Widgets_FOUND)
         resources/elektronika-mk61.qrc
     )
     target_include_directories(elektronika-mk61 PRIVATE src/ui)
+    target_compile_definitions(elektronika-mk61 PRIVATE
+        PMK_VERSION="${PROJECT_VERSION}")
     target_link_libraries(elektronika-mk61 PRIVATE pmk_core Qt6::Widgets)
     install(TARGETS elektronika-mk61 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES resources/icons/elektronika-mk61.svg

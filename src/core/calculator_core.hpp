@@ -51,7 +51,9 @@ public:
     // advance to the same IR2 alignment used by its importer/exporter.
     Program exportProgram();
     void importProgram(const Program& program);
-    bool keyPending() const { return hardware_.keyboard().contactPending(); }
+    bool keyContactActive() const {
+        return hardware_.keyboard().contactActive();
+    }
     std::uint64_t tickCount() const { return ticks_; }
 
 private:

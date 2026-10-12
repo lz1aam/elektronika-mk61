@@ -8,17 +8,14 @@ void KeyboardMatrix::reset() {
     encodedContact_ = 0;
 }
 
-void KeyboardMatrix::queueContact(unsigned row, unsigned column) {
+void KeyboardMatrix::pressContact(unsigned row, unsigned column) {
     if (row < 1 || row > 3 || column > 9)
         throw std::out_of_range("K745IK1302 keyboard-matrix coordinate");
-    if (encodedContact_ == 0)
-        encodedContact_ = static_cast<std::uint16_t>((row << 8U) | column);
+    encodedContact_ = static_cast<std::uint16_t>((row << 8U) | column);
 }
 
 void KeyboardMatrix::releaseContact() {
-    // PMK-Android and EMU145 both latch a contact until its addressed D strobe
-    // consumes it.  A desktop release may arrive before that scan and must not
-    // erase the electrical pulse.
+    encodedContact_ = 0;
 }
 
 KeyboardLines KeyboardMatrix::sample(unsigned zeroBasedDCount,
@@ -40,7 +37,6 @@ KeyboardLines KeyboardMatrix::sample(unsigned zeroBasedDCount,
     case 3: lines.k1 = true;  lines.k2 = true;  break;
     default: break;
     }
-    encodedContact_ = 0;
     return lines;
 }
 

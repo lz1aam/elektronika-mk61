@@ -19,7 +19,7 @@ public:
     bool isPowered() const { return powered_; }
     pmk::AngleMode angleMode() const { return angleMode_; }
     pmk::CalculatorModel model() const { return model_; }
-    bool hasPendingKeyEvent() const { return core_.keyPending(); }
+    bool hasActiveKeyContact() const { return core_.keyContactActive(); }
     bool isStackDisplayExpanded() const { return stackDisplayExpanded_; }
     void setStackDisplayExpanded(bool expanded);
 

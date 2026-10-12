@@ -464,6 +464,7 @@ void CalculatorWidget::setPowered(bool powered) {
         return;
     powered_ = powered;
     pressed_ = -1;
+    core_.releaseKey();
     fIndicator_ = false;
     kIndicator_ = false;
     // A power transition changes phosphor excitation even when the decoded
@@ -559,7 +560,7 @@ void CalculatorWidget::pressKeyIndex(int index) {
         fIndicator_ = true;
     if (wasK && physicalKey == pmk::PhysicalKey::K)
         kIndicator_ = true;
-    const auto matrix = pmk::matrixKey(Keys[index].physicalKey);
+    const auto matrix = pmk::matrixKey(physicalKey);
     core_.pressMatrixKey(matrix.row, matrix.column);
     update();
 }
@@ -711,8 +712,13 @@ void CalculatorWidget::paintEvent(QPaintEvent* event) {
             const unsigned stackLevel = stack.size() - 1U - row;
             const QRectF rowBounds(22.0, row * rowHeight,
                                    LogicalWidth - 22.0, rowHeight);
+            // X is electrically the live display register. Re-reading it from
+            // the circulating-memory diagnostic view can catch a transient
+            // memory phase that the physical VFD never presents.
+            const auto& snapshot = stackLevel == 0
+                ? core_.displaySnapshot() : stack[stackLevel];
             pmk::ui::paintVfdElectrodes(
-                p, rowBounds, stack[stackLevel], powered_,
+                p, rowBounds, snapshot, powered_,
                 stackLevel == 0 && fIndicator_,
                 stackLevel == 0 && kIndicator_);
             pmk::ui::paintVfdElectrodeLabel(

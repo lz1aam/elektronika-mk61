@@ -16,10 +16,10 @@ struct KeyboardLines {
 class KeyboardMatrix {
 public:
     void reset();
-    void queueContact(unsigned row, unsigned column);
+    void pressContact(unsigned row, unsigned column);
     void releaseContact();
     KeyboardLines sample(unsigned zeroBasedDCount, bool displayStrobe);
-    bool contactPending() const { return encodedContact_ != 0; }
+    bool contactActive() const { return encodedContact_ != 0; }
 
 private:
     std::uint16_t encodedContact_{};
