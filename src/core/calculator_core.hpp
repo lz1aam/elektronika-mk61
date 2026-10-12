@@ -47,8 +47,9 @@ public:
     // PMK-Android's digital font uses '/' as a fixed-width blank decimal
     // placeholder. This form keeps all twelve digits aligned in the UI.
     std::string displayGlyphText() const;
-    // PMK-Android-compatible physical program memory ordering. These calls
-    // advance to the same IR2 alignment used by its importer/exporter.
+    // PMK-Android-compatible physical program-memory ordering. Both calls
+    // advance the complete emulated machine to the required IR2 alignment;
+    // they intentionally mutate timing state even when only exporting data.
     Program exportProgram();
     void importProgram(const Program& program);
     bool keyContactActive() const {

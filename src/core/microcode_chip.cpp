@@ -12,46 +12,6 @@ const unsigned char jrom[42]={
     0,1,2,3,4,5
 };
 
-
-MicrocodeChip::MicrocodeChip()
-{
-
-    unsigned i;
-    for(i=0;i<MCU_BITLEN;i++)
-    {
-        rm[i]=false;
-        rr[i]=false;
-        rs[i&3]=false;
-        rs1[i&3]=false;
-        rst[i]=false;
-        rh[i&3]=false;
-
-    }
-    debugme=false;
-
-#if 0
-    if(debugme)
-    {
-        dbg=new cDebugDlg(parent);
-        dbg->setWindowTitle(name);
-        dbg->show();
-    }
-#endif
-
-}
-
-MicrocodeChip::~MicrocodeChip()
-{
-#if 0
-    if(debugme)
-    {
-        dbg->hide();
-        delete dbg;
-    }
-#endif
-
-}
-
 void MicrocodeChip::init()
 {
     icount=0;
@@ -65,50 +25,7 @@ void MicrocodeChip::init()
     was_t_qrd=false;
 
     cptr=0;
-#if 0
-    unsigned i;
-    //Test code for display
-    for(i=0;i<12;i++)
-    {
-        rr[i*3*4+0]=(i+1)&1;
-        rr[i*3*4+1]=((i+1)&2)?true:false;
-        rr[i*3*4+2]=((i+1)&4)?true:false;
-        rr[i*3*4+3]=((i+1)&8)?true:false;
-    }
-    cptr=0x64;
-    rr[144+0]=(cptr)&1;
-    rr[144+1]=(cptr&2)?true:false;
-    rr[144+2]=(cptr&4)?true:false;
-    rr[144+3]=(cptr&8)?true:false;
-    rr[156+0]=(cptr>>4)&1;
-    rr[156+1]=((cptr>>4)&2)?true:false;
-    rr[156+2]=((cptr>>4)&4)?true:false;
-    rr[156+3]=((cptr>>4)&8)?true:false;
-#endif
-#if 0
-    if(debugme)
-        dbg->setI(icount);
-#endif
-
-
     command=cmdrom[cptr];
-#if 0
-    if(debugme)
-    {
-        dbg->setCMD(command);
-        disassemble();
-    }
-
-    if(debugme)
-    {
-        dbg->setS(rs[0]|rs[1]<<1|rs[2]<<2|rs[3]<<3);
-        dbg->setS1(rs1[0]|rs1[1]<<1|rs1[2]<<2|rs1[3]<<3);
-        dbg->setL(rl);
-        dbg->setPC(cptr);
-        dbg->setH(rh[0]|rh[1]<<1|rh[2]<<2|rh[3]<<3);
-        dbg->setREGS(rm,rr,rst,MCU_BITLEN,icount,ucount);
-    }
-#endif
 }
 void MicrocodeChip::pretick(bool rin)
 {
@@ -197,26 +114,10 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         latchk1=k1;
         latchk2=k2;
     }
-    /*
-    else
-    if(command&0xfc0000)
-    {
-        latchk1=false;
-        latchk2=false;
-        rt=false;
-    }*/
     if(u_command.bits.g_nt)
         was_t_qrd=true;
     if(latchk1|latchk2)
     {
-#if 0
-        if(myname=="IK1302")
-        {
-            if((command&0xfc0000)==0)
-                qDebug("lk %d:%d E%d D%d cmd %x %x",k1,k2,ecount+1,dcount+1,cptr,command);
-           // qDebug("%s LK = %d %d D%d E%d\n",myname.toAscii(),latchk1?1:0,latchk2?1:0,dcount+1,ecount+1);
-        }
-#endif
         rt=true;
     }
     else
@@ -435,40 +336,16 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         rst[i]=rst[i+1];
     rst[MCU_BITLEN-1]=temp;
 
-#if 0
-    if(debugme)
-    {
-        dbg->setS(rs[0]|rs[1]<<1|rs[2]<<2|rs[3]<<3);
-        dbg->setS1(rs1[0]|rs1[1]<<1|rs1[2]<<2|rs1[3]<<3);
-        dbg->setL(rl);
-        dbg->setPC(cptr);
-        dbg->setH(rh[0]|rh[1]<<1|rh[2]<<2|rh[3]<<3);
-    }
-#endif
     ucount++;
     if(ucount>=4)
     {
         ucount=0;
         icount++;
-#if 0
-        if((debugme)&&(icount<42))
-            dbg->setI(icount);
-        if(debugme)
-        {
-            dbg->setCMD(command);
-            disassemble();
-        }
-#endif
         ecount++;
     }
     if(icount>=42)
     {
         icount=0;
-#if 0
-        if(debugme)
-            dbg->setI(icount);
-#endif
-
         cptr=rr[39*4+0]|rr[39*4+1]<<1|rr[39*4+2]<<2|rr[39*4+3]<<3;
         cptr=cptr<<4|rr[36*4+0]|rr[36*4+1]<<1|rr[36*4+2]<<2|rr[36*4+3]<<3;
         command=cmdrom[cptr];
@@ -476,22 +353,6 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         rt=false;
         latchk1=false;
         latchk2=false;
-#if 0
-        if(debugme)
-        {
-            dbg->setS(rs[0]|rs[1]<<1|rs[2]<<2|rs[3]<<3);
-            dbg->setS1(rs1[0]|rs1[1]<<1|rs1[2]<<2|rs1[3]<<3);
-            dbg->setL(rl);
-            dbg->setPC(cptr);
-            dbg->setH(rh[0]|rh[1]<<1|rh[2]<<2|rh[3]<<3);
-        }
-
-        if(debugme)
-        {
-            dbg->setCMD(command);
-            disassemble();
-        }
-#endif
     }
     if(ecount>=3)
     {
@@ -516,13 +377,6 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         temp=((command&0xfc0000)==0)?rl:0;
         *segment|=(temp)?0x80:0;
     }
-#if 0
-    if(debugme)
-    {
-        dbg->setREGS(rm,rr,rst,MCU_BITLEN,icount,ucount);
-    }
-#endif
-
     return (ret&1)?true:false;
 }
 

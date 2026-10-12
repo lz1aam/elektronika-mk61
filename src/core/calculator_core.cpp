@@ -46,26 +46,22 @@ MemoryAddress programAddress(unsigned address) {
         result.nibble = result.nibble - 42 + withinGroup * 6;
     return result;
 }
+
+void loadRoms(MicrocodeChip& chip,
+              const unsigned int (&urom)[68],
+              const unsigned char (&srom)[128][9],
+              const unsigned int (&mrom)[256]) {
+    for (unsigned i = 0; i < 68; ++i)
+        chip.ucrom[i].raw = urom[i];
+    for (unsigned i = 0; i < 128; ++i)
+        for (unsigned j = 0; j < 9; ++j)
+            chip.asprom[i][j] = srom[i][j];
+    for (unsigned i = 0; i < 256; ++i)
+        chip.cmdrom[i] = mrom[i];
+}
 }
 
 CalculatorCore::CalculatorCore() {
-    for (unsigned i = 0; i < 68; ++i) {
-        ik1302_.ucrom[i].raw = ik1302_urom[i];
-        ik1303_.ucrom[i].raw = ik1303_urom[i];
-        ik1306_.ucrom[i].raw = ik1306_urom[i];
-    }
-    for (unsigned i = 0; i < 128; ++i) {
-        for (unsigned j = 0; j < 9; ++j) {
-            ik1302_.asprom[i][j] = ik1302_srom[i][j];
-            ik1303_.asprom[i][j] = ik1303_srom[i][j];
-            ik1306_.asprom[i][j] = ik1306_srom[i][j];
-        }
-    }
-    for (unsigned i = 0; i < 256; ++i) {
-        ik1302_.cmdrom[i] = ik1302_mrom[i];
-        ik1303_.cmdrom[i] = ik1303_mrom[i];
-        ik1306_.cmdrom[i] = ik1306_mrom[i];
-    }
     reset();
 }
 
@@ -74,22 +70,9 @@ void CalculatorCore::reset() {
     ik1303_ = MicrocodeChip{};
     ik1306_ = MicrocodeChip{};
     // Re-load ROMs after value-resetting the chips.
-    for (unsigned i = 0; i < 68; ++i) {
-        ik1302_.ucrom[i].raw = ik1302_urom[i];
-        ik1303_.ucrom[i].raw = ik1303_urom[i];
-        ik1306_.ucrom[i].raw = ik1306_urom[i];
-    }
-    for (unsigned i = 0; i < 128; ++i)
-        for (unsigned j = 0; j < 9; ++j) {
-            ik1302_.asprom[i][j] = ik1302_srom[i][j];
-            ik1303_.asprom[i][j] = ik1303_srom[i][j];
-            ik1306_.asprom[i][j] = ik1306_srom[i][j];
-        }
-    for (unsigned i = 0; i < 256; ++i) {
-        ik1302_.cmdrom[i] = ik1302_mrom[i];
-        ik1303_.cmdrom[i] = ik1303_mrom[i];
-        ik1306_.cmdrom[i] = ik1306_mrom[i];
-    }
+    loadRoms(ik1302_, ik1302_urom, ik1302_srom, ik1302_mrom);
+    loadRoms(ik1303_, ik1303_urom, ik1303_srom, ik1303_mrom);
+    loadRoms(ik1306_, ik1306_urom, ik1306_srom, ik1306_mrom);
     ik1302_.init();
     ik1303_.init();
     ik1306_.init();

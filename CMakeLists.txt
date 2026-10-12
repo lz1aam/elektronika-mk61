@@ -55,6 +55,8 @@ if(Qt6Widgets_FOUND)
     install(TARGETS elektronika-mk61 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES resources/icons/elektronika-mk61.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+    install(FILES LICENSE NOTICE
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/${PROJECT_NAME})
     install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/install-desktop.cmake)
 else()
     message(WARNING "Qt 6 Widgets development package not found; native GUI target is disabled")

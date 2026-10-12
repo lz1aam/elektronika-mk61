@@ -22,8 +22,7 @@ union MicroInstruction {
 
 class MicrocodeChip {
 public:
-    MicrocodeChip();
-    ~MicrocodeChip();
+    MicrocodeChip() = default;
     void init();
     void pretick(bool rin);
     bool tick(bool rin, bool k1, bool k2, unsigned* dcycle,
@@ -59,7 +58,6 @@ public:
     unsigned ecount{};
     unsigned ucount{};
     unsigned char cptr{};
-    bool debugme{};
 };
 } // namespace pmk
 

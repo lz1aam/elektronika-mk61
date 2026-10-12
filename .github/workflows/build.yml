@@ -12,7 +12,14 @@ jobs:
       - name: Install Qt 6 build dependencies
         run: sudo apt-get update && sudo apt-get install -y qt6-base-dev
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
       - name: Build
         run: cmake --build build -j 2
+      - name: Startup smoke test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ./build/elektronika-mk61 --smoke-test
 

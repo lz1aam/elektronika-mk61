@@ -12,6 +12,8 @@ installed_files=(
     "${install_prefix}/bin/elektronika-mk61"
     "${install_prefix}/share/applications/elektronika-mk61.desktop"
     "${install_prefix}/share/icons/hicolor/scalable/apps/elektronika-mk61.svg"
+    "${install_prefix}/share/doc/elektronika-mk61/LICENSE"
+    "${install_prefix}/share/doc/elektronika-mk61/NOTICE"
 )
 
 removed=0

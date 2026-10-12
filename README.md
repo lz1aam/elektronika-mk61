@@ -44,9 +44,13 @@ Install for the current user:
 ./install.sh
 ```
 
+The installer keeps its optimized build in `build-release/`, independently
+of the manual `build/` directory shown above.
+
 This installs the executable as `~/.local/bin/elektronika-mk61`, the launcher
 under `~/.local/share/applications`, and the icon under
-`~/.local/share/icons/hicolor`. The desktop and icon caches are refreshed
+`~/.local/share/icons/hicolor`. License and attribution files are installed
+under `~/.local/share/doc/elektronika-mk61`. The desktop and icon caches are refreshed
 automatically when the corresponding cache utilities are available. The
 launcher follows the freedesktop/XDG layout and does not depend on GNOME, KDE
 Plasma, XFCE, LXQt, or another particular desktop environment. Menus normally

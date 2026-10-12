@@ -5,9 +5,10 @@
 #include "program_text.hpp"
 
 #include <array>
+#include <charconv>
+#include <cctype>
 #include <cstdint>
 #include <iomanip>
-#include <regex>
 #include <sstream>
 #include <stdexcept>
 
@@ -19,7 +20,7 @@ struct Command {
     std::string_view mnemonic;
 };
 
-constexpr std::array<Command, 92> Commands = {{
+constexpr std::array<Command, 91> Commands = {{
     {0x15, 0, "F10ˣ"}, {0x54, 0, "KНОП"}, {0x1F, 0, "1F"},
     {0x2F, 0, "2F"}, {0x56, 0, "K2"}, {0x16, 0, "Feˣ"},
     {0x17, 0, "Flg"}, {0x18, 0, "Fln"}, {0x30, 0, "KЧ→М"},
@@ -35,7 +36,7 @@ constexpr std::array<Command, 92> Commands = {{
     {0x24, 0, "Fxʸ"}, {0x27, 0, "K-"}, {0x28, 0, "K×"},
     {0x29, 0, "K÷"}, {0x2A, 0, "KМ→Ч"}, {0x2B, 0, "2B"},
     {0x2C, 0, "2C"}, {0x2D, 0, "2D"}, {0x2E, 0, "2E"},
-    {0x2F, 0, "2F"}, {0x0F, 0, "FВх"}, {0x3B, 0, "KCЧ"},
+    {0x0F, 0, "FВх"}, {0x3B, 0, "KCЧ"},
     {0x0A, 0, "."}, {0x0B, 0, "/-/"}, {0x0C, 0, "ВП"},
     {0x0D, 0, "Сx"}, {0x25, 0, "Fѻ"}, {0x37, 0, "KɅ"},
     {0x38, 0, "KV"}, {0x39, 0, "K(+)"}, {0x3A, 0, "Kинв"},
@@ -101,9 +102,11 @@ std::uint8_t parseMnemonic(std::string_view token) {
             return command.code;
         }
     }
-    std::size_t parsed = 0;
-    const unsigned long value = std::stoul(std::string(token), &parsed, 16);
-    if (parsed != token.size() || value > 0xff)
+    unsigned value = 0;
+    const auto [end, error] =
+        std::from_chars(token.data(), token.data() + token.size(), value, 16);
+    if (error != std::errc{} || end != token.data() + token.size() ||
+        value > 0xffU)
         throw std::invalid_argument("unknown PMK command: " + std::string(token));
     return static_cast<std::uint8_t>(value);
 }
@@ -131,7 +134,21 @@ ParsedProgram importProgramText(std::string_view text) {
         const auto first = line.find_first_not_of(" \t\r");
         if (first == std::string::npos || line[first] == '#')
             continue;
-        normalized += std::regex_replace(line, std::regex(R"(\s+\|\s+)"), ".");
+        for (std::size_t i = 0; i < line.size(); ++i) {
+            const auto whitespace = [](char c) {
+                return std::isspace(static_cast<unsigned char>(c)) != 0;
+            };
+            if (line[i] == '|' && i != 0 && i + 1 < line.size() &&
+                whitespace(line[i - 1]) && whitespace(line[i + 1])) {
+                while (!normalized.empty() && whitespace(normalized.back()))
+                    normalized.pop_back();
+                normalized += '.';
+                while (i + 1 < line.size() && whitespace(line[i + 1]))
+                    ++i;
+            } else {
+                normalized += line[i];
+            }
+        }
         normalized += ' ';
     }
 
