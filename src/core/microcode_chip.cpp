@@ -39,7 +39,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
     int a;
     int b;
     int g;
-    int newr0;
+    int newr0 = rr[0];
     int newm0;
     bool x,y,z;
     unsigned char ucmd;
@@ -92,7 +92,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
     cur_ucmd=ucmd;
     u_command=ucrom[ucmd];
 
-    switch(u_command.bits.s1)
+    switch(u_command.s1())
     {
         case 2:
             rh[0]=((((k2?1:0)<<3|(k1?1:0))>>ucount)&1)?true:false;
@@ -114,7 +114,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         latchk1=k1;
         latchk2=k2;
     }
-    if(u_command.bits.g_nt)
+    if(u_command.g_nt())
         was_t_qrd=true;
     if(latchk1|latchk2)
     {
@@ -124,54 +124,54 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         rt=false;
     //if((command&0xfc0000)==0)
     {
-        if(u_command.bits.g_nt | was_t_qrd)
+        if(u_command.g_nt() | was_t_qrd)
             rs1[0]=((((latchk2?1:0)<<3|(latchk1?1:0))>>ucount)&1)?true:false;
     }
 
 
-    if(u_command.bits.a_r)
+    if(u_command.a_r())
         a|=rr[0];
 
-    if(u_command.bits.a_m)
+    if(u_command.a_m())
         a|=rm[0];
 
-    if(u_command.bits.a_st)
+    if(u_command.a_st())
         a|=rst[0];
 
-    if(u_command.bits.a_nr)
+    if(u_command.a_nr())
         a|=!rr[0];
 
-    if(u_command.bits.a_10nl)
+    if(u_command.a_10nl())
         a|=((10>>ucount)&1)&!rl;
 
-    if(u_command.bits.a_s)
+    if(u_command.a_s())
         a|=rs[0];
-    if(u_command.bits.a_4)
+    if(u_command.a_4())
         a|=(4>>ucount)&1;
 
 
 
 
 
-    if(u_command.bits.b_1)
+    if(u_command.b_1())
         b|=(1>>ucount)&1;
-    if(u_command.bits.b_6)
+    if(u_command.b_6())
         b|=(6>>ucount)&1;
-    if(u_command.bits.b_s)
+    if(u_command.b_s())
         b|=rs[0];
-    if(u_command.bits.b_s1)
+    if(u_command.b_s1())
         b|=rs1[0];
-    if(u_command.bits.b_ns)
+    if(u_command.b_ns())
         b|=!rs[0];
 
-    if(u_command.bits.g_l)
+    if(u_command.g_l())
         g|=rl;
-    if(u_command.bits.g_nl)
+    if(u_command.g_nl())
         g|=!rl;
 
 
 
-    if(u_command.bits.g_nt)
+    if(u_command.g_nt())
          g|=!rt;
 
     if(ucount!=0) //gamma input -- 1 bit data or carry only.
@@ -181,7 +181,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
     carry=((sigma>>1)&1)?true:false;
     sigma&=1;
 
-    switch(u_command.bits.r0)
+    switch(u_command.r0())
     {
         case 0:
             newr0=rr[0];
@@ -208,7 +208,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
             newr0=rr[0]|sigma;
             break;
     }
-    if(u_command.bits.r_1)
+    if(u_command.r_1())
     {
         if(icount<36)
         {
@@ -218,7 +218,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         else
             rr[MCU_BITLEN-1*4]=sigma;
     }
-    if(u_command.bits.r_2)
+    if(u_command.r_2())
     {
         if(icount<36)
         {
@@ -228,15 +228,15 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         else
             rr[MCU_BITLEN-2*4]=sigma;
     }
-    if(u_command.bits.l)
+    if(u_command.l())
         if(ucount==3)
             rl=carry;
-    if(u_command.bits.m)
+    if(u_command.m())
         newm0=rs[0];
     else
         newm0=rm[0];
 
-    switch(u_command.bits.s)
+    switch(u_command.s())
     {
         case 0:
             temp=rs[0];
@@ -258,7 +258,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
             break;
     }
 
-    switch(u_command.bits.s1)
+    switch(u_command.s1())
     {
         case 0:
             temp=rs1[0];
@@ -283,7 +283,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
 #endif
     }
 
-    switch(u_command.bits.st)
+    switch(u_command.st())
     {
         case 1:
             rst[8]=rst[4];

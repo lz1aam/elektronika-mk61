@@ -3,6 +3,8 @@
 #include <array>
 #include <cstdint>
 
+namespace pmk { struct CoreStateCodec; }
+
 namespace pmk::hardware {
 
 struct KeyboardLines {
@@ -22,6 +24,7 @@ public:
     bool contactActive() const { return encodedContact_ != 0; }
 
 private:
+    friend struct pmk::CoreStateCodec;
     std::uint16_t encodedContact_{};
 };
 
@@ -51,6 +54,10 @@ enum VfdSegment : std::uint8_t {
 
 // Decoder truth table for the display codes emitted by K745IK1302.  Codes
 // A..E are the calculator's -, L, C, Г, E forms and F is electrically blank.
+// Checked against the supplied MK-61 manual, Table 1 (printed p. 19).
+// Code D is NOT a Latin D or an upper C: Г lights A+E+F (full left side),
+// never G (middle). Keep glyph decoding here, shared by live and stack views;
+// do not infer electrode masks from displayText()'s diagnostic characters.
 constexpr std::uint8_t decodedVfdSegments(std::uint8_t code) {
     constexpr std::array<std::uint8_t, 16> masks = {{
         SegmentA | SegmentB | SegmentC | SegmentD | SegmentE | SegmentF,
@@ -67,7 +74,7 @@ constexpr std::uint8_t decodedVfdSegments(std::uint8_t code) {
         SegmentG,
         SegmentD | SegmentE | SegmentF,
         SegmentA | SegmentD | SegmentE | SegmentF,
-        SegmentA | SegmentF | SegmentG,
+        SegmentA | SegmentE | SegmentF,
         SegmentA | SegmentD | SegmentE | SegmentF | SegmentG,
         0,
     }};
@@ -116,6 +123,7 @@ public:
     const std::array<std::uint8_t, 12>& codes() const { return codes_; }
 
 private:
+    friend struct pmk::CoreStateCodec;
     void excite(unsigned cell, std::uint8_t mask);
 
     VfdSnapshot snapshot_{};

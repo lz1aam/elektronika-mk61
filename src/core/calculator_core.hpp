@@ -8,11 +8,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <span>
+#include <vector>
 
 namespace pmk {
 
 enum class AngleMode { Radians, Degrees, Grads };
-enum class CalculatorModel { MK61, MK54 };
 
 class CalculatorCore {
 public:
@@ -23,8 +24,14 @@ public:
 
     void reset();
     void setAngleMode(AngleMode mode);
-    void setModel(CalculatorModel model);
-    CalculatorModel model() const { return model_; }
+    AngleMode angleMode() const { return mode_; }
+
+    // Versioned, little-endian native state. Saving does not advance ticks.
+    // Loading validates a temporary machine before replacing this one.
+    // Includes the physical contact; frontends may release it on restore.
+    static constexpr std::size_t MaximumStateBytes = 65'536;
+    std::vector<std::uint8_t> saveState() const;
+    void loadState(std::span<const std::uint8_t> data);
 
     // EMU145 keyboard matrix: row is 1..3, column is 0..9.
     void pressMatrixKey(unsigned row, unsigned column);
@@ -58,6 +65,7 @@ public:
     std::uint64_t tickCount() const { return ticks_; }
 
 private:
+    friend struct CoreStateCodec;
     void tick();
     void alignProgramMemory();
     void refreshStackDisplaySnapshots();
@@ -77,7 +85,6 @@ private:
     bool sync_{};
     unsigned dcycle_{};
     AngleMode mode_{AngleMode::Radians};
-    CalculatorModel model_{CalculatorModel::MK61};
     std::uint64_t ticks_{};
     unsigned memorySyncCounter_{};
 };

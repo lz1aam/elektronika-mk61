@@ -9,7 +9,6 @@
 #include "mcommands.inc"
 
 #include <algorithm>
-#include <stdexcept>
 
 namespace pmk {
 namespace {
@@ -35,8 +34,8 @@ constexpr std::array<MemoryAddress, 15> kStackAddresses = {{
     {2, 34}, {2, 76}, {2, 118}, {2, 160}, {2, 202}, {2, 244},
     {3, 34}, {4, 34}, {5, 34}
 }};
-constexpr std::array<unsigned, 5> kStackSwapMk61 = {{14, 13, 12, 8, 9}};
-constexpr std::array<unsigned, 5> kStackSwapMk54 = {{13, 12, 8, 9, 10}};
+constexpr std::array<unsigned, 5> kStackSwap = {{14, 13, 12, 8, 9}};
+constexpr unsigned MemoryPhaseCount = 5;
 
 MemoryAddress programAddress(unsigned address) {
     const unsigned group = address / 7;
@@ -102,13 +101,6 @@ void CalculatorCore::setAngleMode(AngleMode mode) {
     hardware_.angleSelector().setPosition(position);
 }
 
-void CalculatorCore::setModel(CalculatorModel model) {
-    if (model_ == model)
-        return;
-    model_ = model;
-    reset();
-}
-
 void CalculatorCore::releaseKey() {
     hardware_.keyboard().releaseContact();
 }
@@ -136,10 +128,7 @@ void CalculatorCore::tick() {
         hardware_.angleSelector().inputLevel(ik1303_.dcount);
 
     chain_ = ik1303_.tick(chain_, anglePin, false, nullptr, nullptr, nullptr);
-    // PMK-Android Emulator.tick(): MK-54 bypasses IK1306 while MK-61 includes
-    // it between IK1303 and the first delay memory.
-    if (model_ == CalculatorModel::MK61)
-        chain_ = ik1306_.tick(chain_, false, false, nullptr, nullptr, nullptr);
+    chain_ = ik1306_.tick(chain_, false, false, nullptr, nullptr, nullptr);
     chain_ = ir2_1_.tick(chain_);
     chain_ = ir2_2_.tick(chain_);
     ik1302_.pretick(chain_);
@@ -147,10 +136,8 @@ void CalculatorCore::tick() {
     // PMK-Android reads the circulating registers when IR2_1.microtick is 84.
     // One Java nibble tick is four bit ticks in this core.
     if (ticks_ % DelayMemory::BitLength == 84U * 4U) {
-        const unsigned phaseCount =
-            model_ == CalculatorModel::MK61 ? 5U : 7U;
-        memorySyncCounter_ = (memorySyncCounter_ + 1U) % phaseCount;
-        if (memorySyncCounter_ == phaseCount - 1U)
+        memorySyncCounter_ = (memorySyncCounter_ + 1U) % MemoryPhaseCount;
+        if (memorySyncCounter_ == MemoryPhaseCount - 1U)
             refreshStackDisplaySnapshots();
     }
 }
@@ -189,7 +176,16 @@ hardware::VfdSnapshot CalculatorCore::stackValueSnapshot(
         const int target = exponent < 0 ? 10 : 11;
         while (int(formatted.size()) < target)
             formatted.push_back(' ');
-        formatted += std::to_string(exponent);
+        if (exponent < 0) {
+            formatted += '-';
+            if (exponent > -10)
+                formatted += '0';
+            formatted += std::to_string(-exponent);
+        } else {
+            if (exponent < 10)
+                formatted += '0';
+            formatted += std::to_string(exponent);
+        }
     }
 
     std::array<std::uint8_t, 12> electricalCodes;
@@ -217,12 +213,10 @@ hardware::VfdSnapshot CalculatorCore::stackValueSnapshot(
 }
 
 void CalculatorCore::refreshStackDisplaySnapshots() {
-    const auto& swaps = model_ == CalculatorModel::MK61
-        ? kStackSwapMk61 : kStackSwapMk54;
     // Upstream order is X1, X, Y, Z, T. X1 is not part of the four-level RPN
     // stack, so the expanded display intentionally starts at element one.
     for (unsigned level = 0; level < stackDisplaySnapshots_.size(); ++level) {
-        const MemoryAddress location = kStackAddresses[swaps[level + 1]];
+        const MemoryAddress location = kStackAddresses[kStackSwap[level + 1]];
         stackDisplaySnapshots_[level] =
             stackValueSnapshot(location.chip, location.nibble);
     }
@@ -266,8 +260,7 @@ void CalculatorCore::alignProgramMemory() {
     // occurs at five different page phases. Program addresses are valid only
     // at the register-dump phase (the same phase used for stack snapshots).
     constexpr std::uint64_t alignedBit = 84U * 4U;
-    const unsigned phaseCount = model_ == CalculatorModel::MK61 ? 5U : 7U;
-    const unsigned alignedPhase = phaseCount - 1U;
+    constexpr unsigned alignedPhase = MemoryPhaseCount - 1U;
     while (ticks_ % DelayMemory::BitLength != alignedBit ||
            memorySyncCounter_ != alignedPhase)
         tick();
@@ -308,8 +301,6 @@ void CalculatorCore::writeProgramNibble(unsigned chip, unsigned address,
 }
 
 CalculatorCore::Program CalculatorCore::exportProgram() {
-    if (model_ != CalculatorModel::MK61)
-        throw std::logic_error("PMK-Android text program export supports MK-61 only");
     alignProgramMemory();
     Program program{};
     for (unsigned address = 0; address < program.size(); ++address) {
@@ -322,8 +313,6 @@ CalculatorCore::Program CalculatorCore::exportProgram() {
 }
 
 void CalculatorCore::importProgram(const Program& program) {
-    if (model_ != CalculatorModel::MK61)
-        throw std::logic_error("PMK-Android text program import supports MK-61 only");
     alignProgramMemory();
     for (unsigned address = 0; address < program.size(); ++address) {
         const auto location = programAddress(address);

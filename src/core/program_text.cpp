@@ -118,7 +118,7 @@ std::string exportProgramText(const CalculatorCore::Program& program) {
     for (std::size_t address = 0; address < program.size(); ++address) {
         if (address < 10) out << '0';
         if (address < 100) out << address;
-        else out << "A0"; // Preserve PMK-Android SaveStateManager behavior.
+        else out << 'A' << address - 100;
         out << '.' << mnemonic(program[address], isAddress) << '\t';
         if ((address + 1) % 10 == 0)
             out << '\n';
@@ -158,15 +158,33 @@ ParsedProgram importProgramText(std::string_view text) {
     while (tokens >> token) {
         if (result.size == result.bytes.size())
             throw std::length_error("PMK program exceeds 105 commands");
-        if (token.size() > 2 && token[2] == '.')
+        if (token.size() > 2 && token[2] == '.') {
+            const bool decimalAddress = token[0] >= '0' && token[0] <= '9' &&
+                                        token[1] >= '0' && token[1] <= '9';
+            const bool extendedAddress = token[0] == 'A' &&
+                                         token[1] >= '0' && token[1] <= '4';
+            const unsigned address = decimalAddress
+                ? unsigned(token[0] - '0') * 10U + unsigned(token[1] - '0')
+                : extendedAddress ? 100U + unsigned(token[1] - '0') : 105U;
+            // Older PMK-Android exports label every final step A0. Accept
+            // that historical spelling only in the five final positions.
+            const bool legacyTail = token.starts_with("A0.") &&
+                                    result.size >= 100;
+            if (address != result.size && !legacyTail)
+                throw std::invalid_argument("unexpected PMK program address: " +
+                                            token.substr(0, 2));
             token.erase(0, 3);
+        }
         try {
-            result.bytes[result.size++] = parseMnemonic(token);
+            result.bytes[result.size] = parseMnemonic(token);
         } catch (const std::exception&) {
             throw std::invalid_argument("unknown PMK command at " +
-                                        std::to_string(result.size) + ": " + token);
+                                        std::to_string(result.size + 1) + ": " + token);
         }
+        ++result.size;
     }
+    if (result.size == 0)
+        throw std::invalid_argument("PMK program contains no commands");
     return result;
 }
 

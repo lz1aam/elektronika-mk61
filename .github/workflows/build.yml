@@ -5,6 +5,26 @@ on:
   pull_request:
 
 jobs:
+  portable-core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure standalone core
+        run: >-
+          cmake -S . -B build-core
+          -DMK61_BUILD_GUI=OFF
+          -DMK61_INSTALL_DEVELOPMENT=ON
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+      - name: Build standalone core
+        run: cmake --build build-core --config Release --parallel 2
+      - name: Install standalone core
+        run: cmake --install build-core --config Release --prefix core-install
+
   linux:
     runs-on: ubuntu-latest
     steps:

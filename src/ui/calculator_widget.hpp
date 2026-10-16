@@ -2,6 +2,7 @@
 
 #include "calculator_core.hpp"
 #include "keymap.hpp"
+#include "realtime_clock.hpp"
 
 #include <QWidget>
 #include <QElapsedTimer>
@@ -18,7 +19,6 @@ public:
     explicit CalculatorWidget(QWidget* parent = nullptr);
     bool isPowered() const { return powered_; }
     pmk::AngleMode angleMode() const { return angleMode_; }
-    pmk::CalculatorModel model() const { return model_; }
     bool hasActiveKeyContact() const { return core_.keyContactActive(); }
     bool isStackDisplayExpanded() const { return stackDisplayExpanded_; }
     void setStackDisplayExpanded(bool expanded);
@@ -49,14 +49,18 @@ private:
 
     int keyAt(const QPointF& logical) const;
     bool selectAngleModeAt(const QPointF& logical);
-    bool selectModelAt(const QPointF& logical);
     bool togglePowerAt(const QPointF& logical);
     bool showProgramMenuAt(const QPointF& logical, const QPoint& globalPosition);
     void loadTextProgram();
     void saveTextProgram();
+    void loadNativeState();
+    void saveNativeState();
+    void loadNativeStateFile(const QString& path);
+    void saveNativeStateFile(const QString& path);
     void setPowered(bool powered);
     void pressKeyIndex(int index);
     void releaseCurrentKey();
+    void advanceEmulationToNow();
     void toggleStackDisplay();
     void updateDisplay();
     bool displayStateChanged();
@@ -69,7 +73,6 @@ private:
     pmk::CalculatorCore core_;
     QString symbolFontFamily_;
     pmk::AngleMode angleMode_{pmk::AngleMode::Radians};
-    pmk::CalculatorModel model_{pmk::CalculatorModel::MK61};
     bool powered_{true};
     bool fIndicator_{};
     bool kIndicator_{};
@@ -77,12 +80,15 @@ private:
     QSize compactSize_;
     QTimer* timer_{};
     QElapsedTimer emulationClock_;
-    qint64 tickRemainder_{};
+    pmk::RealtimeClock realtimeClock_;
     bool repaintPhase_{};
     bool displayStateInitialized_{};
     unsigned displayRefreshFrames_{};
     std::array<std::uint8_t, 12> lastDisplayCodes_{};
     std::array<std::array<std::uint8_t, 12>, 4> lastStackCodes_{};
     int pressed_{-1};
+    int activeHostKey_{};
+    quint32 activeScanCode_{};
+    bool mouseContact_{};
 };
 

@@ -14,6 +14,7 @@ installed_files=(
     "${install_prefix}/share/icons/hicolor/scalable/apps/elektronika-mk61.svg"
     "${install_prefix}/share/doc/elektronika-mk61/LICENSE"
     "${install_prefix}/share/doc/elektronika-mk61/NOTICE"
+    "${install_prefix}/share/doc/elektronika-mk61/DejaVu-LICENSE.txt"
 )
 
 removed=0
