@@ -124,28 +124,28 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         rt=false;
     //if((command&0xfc0000)==0)
     {
-        if(u_command.g_nt() | was_t_qrd)
+        if(u_command.g_nt() | static_cast<unsigned>(was_t_qrd))
             rs1[0]=((((latchk2?1:0)<<3|(latchk1?1:0))>>ucount)&1)?true:false;
     }
 
 
     if(u_command.a_r())
-        a|=rr[0];
+        a|=static_cast<int>(rr[0]);
 
     if(u_command.a_m())
-        a|=rm[0];
+        a|=static_cast<int>(rm[0]);
 
     if(u_command.a_st())
-        a|=rst[0];
+        a|=static_cast<int>(rst[0]);
 
     if(u_command.a_nr())
-        a|=!rr[0];
+        a|=static_cast<int>(!rr[0]);
 
     if(u_command.a_10nl())
         a|=((10>>ucount)&1)&!rl;
 
     if(u_command.a_s())
-        a|=rs[0];
+        a|=static_cast<int>(rs[0]);
     if(u_command.a_4())
         a|=(4>>ucount)&1;
 
@@ -158,21 +158,21 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
     if(u_command.b_6())
         b|=(6>>ucount)&1;
     if(u_command.b_s())
-        b|=rs[0];
+        b|=static_cast<int>(rs[0]);
     if(u_command.b_s1())
-        b|=rs1[0];
+        b|=static_cast<int>(rs1[0]);
     if(u_command.b_ns())
-        b|=!rs[0];
+        b|=static_cast<int>(!rs[0]);
 
     if(u_command.g_l())
-        g|=rl;
+        g|=static_cast<int>(rl);
     if(u_command.g_nl())
-        g|=!rl;
+        g|=static_cast<int>(!rl);
 
 
 
     if(u_command.g_nt())
-         g|=!rt;
+         g|=static_cast<int>(!rt);
 
     if(ucount!=0) //gamma input -- 1 bit data or carry only.
         g=carry;
@@ -196,16 +196,16 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
             newr0=rs[0];
             break;
         case 4:
-            newr0=rr[0]|rs[0]|sigma;
+            newr0=static_cast<unsigned>(rr[0])|static_cast<unsigned>(rs[0])|sigma;
             break;
         case 5:
-            newr0=rs[0]|sigma;
+            newr0=static_cast<unsigned>(rs[0])|sigma;
             break;
         case 6:
             newr0=rr[0]|rs[0];
             break;
         case 7:
-            newr0=rr[0]|sigma;
+            newr0=static_cast<unsigned>(rr[0])|sigma;
             break;
     }
     if(u_command.r_1())
@@ -254,7 +254,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         case 3:
             temp=rs1[0];
             rs1[0]=rs1[1];rs1[1]=rs1[2];rs1[2]=rs1[3];
-            rs1[3]=sigma|temp;
+            rs1[3]=sigma|static_cast<unsigned>(temp);
             break;
     }
 
@@ -278,7 +278,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
         case 3:
             temp=rs1[0];
             rs1[0]=rs1[1];rs1[1]=rs1[2];rs1[2]=rs1[3];
-            rs1[3]=temp|sigma;
+            rs1[3]=static_cast<unsigned>(temp)|sigma;
             break;
 #endif
     }
@@ -300,7 +300,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
             x=rst[0*4];
             y=rst[1*4];
             z=rst[2*4];
-            rst[0*4]=sigma|y;
+            rst[0*4]=sigma|static_cast<unsigned>(y);
             rst[1*4]=x|z;
             rst[2*4]=x|y;
             break;
@@ -346,8 +346,8 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
     if(icount>=42)
     {
         icount=0;
-        cptr=rr[39*4+0]|rr[39*4+1]<<1|rr[39*4+2]<<2|rr[39*4+3]<<3;
-        cptr=cptr<<4|rr[36*4+0]|rr[36*4+1]<<1|rr[36*4+2]<<2|rr[36*4+3]<<3;
+        cptr=static_cast<unsigned char>(static_cast<int>(rr[39*4+0])|rr[39*4+1]<<1|rr[39*4+2]<<2|rr[39*4+3]<<3);
+        cptr=static_cast<unsigned char>(cptr<<4|static_cast<int>(rr[36*4+0])|rr[36*4+1]<<1|rr[36*4+2]<<2|rr[36*4+3]<<3);
         command=cmdrom[cptr];
         was_t_qrd=false;
         rt=false;
@@ -373,7 +373,7 @@ bool MicrocodeChip::tick(bool rin,bool k1, bool k2, unsigned int * dcycle, bool 
 
     if(segment)
     {
-        *segment=(((command&0xfc0000)==0)&&(ecount==0)&&(ucount==0))?(dispout[0]|dispout[1]<<1|dispout[2]<<2|dispout[3]<<3):0;
+        *segment=static_cast<unsigned char>((((command&0xfc0000)==0)&&(ecount==0)&&(ucount==0))?(static_cast<int>(dispout[0])|dispout[1]<<1|dispout[2]<<2|dispout[3]<<3):0);
         temp=((command&0xfc0000)==0)?rl:0;
         *segment|=(temp)?0x80:0;
     }

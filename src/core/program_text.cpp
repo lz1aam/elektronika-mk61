@@ -72,7 +72,7 @@ std::string mnemonic(std::uint8_t code, bool& isAddress) {
         if (command.type == 1) {
             const unsigned reg = code & 0x0fU;
             if (reg < 0x0fU && (code & 0xf0U) == command.code) {
-                return std::string(command.mnemonic) + hex(reg);
+                return std::string(command.mnemonic) + hex(static_cast<std::uint8_t>(reg));
             }
         } else if (command.code == code) {
             isAddress = command.type == 2;

@@ -37,8 +37,9 @@ reference is PMK-Android commit
 
 ## Build
 
-Requirements: CMake 3.20+, a C++20 compiler, and Qt 6 Widgets development
-files (`qt6-base-dev` on Debian/Ubuntu).
+Requirements: CMake 3.20+, a C++20 compiler, Qt 6 Widgets development
+files (`qt6-base-dev` on Debian/Ubuntu), and the Qt SVG runtime module
+(`libqt6svg6`) for the application icon.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
