@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+include(CTest)
 option(MK61_BUILD_GUI "Build the Qt desktop application" ON)
 option(MK61_INSTALL_DEVELOPMENT "Install core libraries, headers and CMake package" OFF)
 
@@ -63,6 +64,7 @@ if(MK61_INSTALL_DEVELOPMENT)
         ${CMAKE_CURRENT_BINARY_DIR}/MK61ConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/MK61)
 endif()
+
 install(FILES LICENSE NOTICE resources/fonts/DejaVu-LICENSE.txt
     DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/${PROJECT_NAME})
 
@@ -102,5 +104,9 @@ if(MK61_BUILD_GUI)
             DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
         install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/install-desktop.cmake)
     endif()
+endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
 endif()
 

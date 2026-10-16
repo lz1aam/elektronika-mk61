@@ -71,6 +71,35 @@ enabled only on Linux; Qt targets use a Windows GUI executable or macOS app
 bundle on those systems. Windows/macOS deployment and ARM execution still
 require platform validation and dependency packaging.
 
+## Verification
+
+Portable core checks require no Qt:
+
+```sh
+cmake -S . -B build-core -DMK61_BUILD_GUI=OFF -DBUILD_TESTING=ON -DMK61_INSTALL_DEVELOPMENT=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+cmake --build build-core --config Release --parallel 2
+ctest --test-dir build-core -C Release -L core --output-on-failure --no-tests=error
+cmake --install build-core --config Release --prefix core-install
+```
+
+CI is configured to build, run these checks and install the development
+package on Ubuntu, Windows and macOS. Remote platform results must be checked
+after the workflow runs. Qt GUI checks are enabled only on Linux
+and require Qt 6 Test as well as Widgets (both supplied by `qt6-base-dev`):
+
+```sh
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 2
+ctest --test-dir build -C Release --output-on-failure --no-tests=error
+```
+
+GUI checks use Qt's offscreen platform; they do not establish native desktop
+or visual fidelity on other operating systems. Set `-DBUILD_TESTING=OFF` to
+build only the application or libraries. See [test notes](tests/README.md)
+for coverage and reference provenance.
+
+## Installation
+
 Install for the current user:
 
 ```sh

@@ -916,7 +916,6 @@ void CalculatorWidget::paintEvent(QPaintEvent* event) {
                         QColor(83, 203, 229), lowerSymbol);
         }
 
-        const auto physicalKey = Keys[i].physicalKey;
         QFont buttonFont = letteringFont(LetteringRole::KeyCap);
         QString mainLabel = QString::fromUtf8(Keys[i].main);
         p.setFont(buttonFont);
