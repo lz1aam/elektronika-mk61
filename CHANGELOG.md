@@ -2,6 +2,10 @@
 
 ## 0.1.2
 
+- Keep each sampled keyboard word stable through its four serial bit phases,
+  preventing corrupted results from rapid contacts without buffering keys.
+- Extend native states to version 2 for exact sampled-input restoration;
+  retain version 1 import with a documented input-word migration.
 - Focus the application and core exclusively on MK-61; remove MK-54 support.
 - Optimize serial delay memories using circular buffers, preserving logical
   ordering and the MK-61 processor chain.

@@ -118,7 +118,7 @@ void CalculatorCore::tick() {
     unsigned char segment = 0;
 
     const auto keyboardLines =
-        hardware_.keyboard().sample(ik1302_.dcount, ik1302_.strobe());
+        hardware_.keyboard().sample(ik1302_.dcount, ik1302_.strobe(), ik1302_.ucount);
     chain_ = ik1302_.tick(chain_, keyboardLines.k1, keyboardLines.k2,
                           &dcycle_, &sync_, &segment);
     hardware_.display().advanceMicrotick();

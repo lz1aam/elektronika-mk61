@@ -62,9 +62,21 @@ int main(int argc, char** argv) {
     try {
         pmk::CalculatorCore core;
         const auto resetBytes = core.saveState();
-        check(resetBytes[8] == 1 && resetBytes[9] == 0,
+        check(resetBytes[8] == 2 && resetBytes[9] == 0,
               "version is not encoded little-endian");
         roundTrip(core);
+        // v1 files predate the two sampled keyboard bits. Preserve import,
+        // with a documented contact-to-word migration (not exact v1 replay).
+        auto legacy = resetBytes;
+        legacy.resize(legacy.size() - 2);
+        legacy[8] = 1;
+        const auto legacySize = legacy.size() - 20;
+        for (unsigned i = 0; i < 4; ++i)
+            legacy[12 + i] = static_cast<std::uint8_t>(legacySize >> (i * 8));
+        updateChecksum(legacy);
+        pmk::CalculatorCore migrated;
+        migrated.loadState(legacy);
+        check(migrated.saveState() == resetBytes, "v1 reset migration failed");
         for (const auto phase : {1U, 3U, 4U, 167U, 168U, 335U, 336U, 997U,
                                   1008U, 5039U, 5040U, 12345U}) {
             auto atPhase = core;
@@ -72,6 +84,21 @@ int main(int argc, char** argv) {
             roundTrip(atPhase);
         }
         core.advanceTicks(250000);
+        // The physical contact may be released while its sampled word is
+        // still held for the remaining bit phases. Both must survive save/load.
+        core.pressMatrixKey(2, 0);
+        bool capturedWord = false;
+        for (unsigned i = 0; i < 5040; ++i) {
+            core.advanceTicks(1);
+            if (core.saveState().back() != 0 && (core.tickCount() & 3U) != 0) {
+                capturedWord = true;
+                core.releaseKey();
+                roundTrip(core);
+                break;
+            }
+        }
+        check(capturedWord, "could not exercise a sampled word after release");
+        core.advanceTicks(500000);
         for (const auto mode : {pmk::AngleMode::Radians, pmk::AngleMode::Degrees,
                                 pmk::AngleMode::Grads}) {
             core.setAngleMode(mode);
@@ -98,12 +125,13 @@ int main(int argc, char** argv) {
 
         auto bad = resetBytes;
         bad[0] ^= 1; rejected(bad, core);
-        bad = resetBytes; bad[8] = 2; rejected(bad, core);
+        bad = resetBytes; bad[8] = 3; rejected(bad, core);
         bad = resetBytes; bad[10] = 1; rejected(bad, core);
         bad = resetBytes; bad.back() ^= 1; rejected(bad, core);
         bad = resetBytes; bad.push_back(0); rejected(bad, core);
         bad = resetBytes; bad[20] ^= 1; updateChecksum(bad); rejected(bad, core);
         bad = resetBytes; bad[28] = 2; updateChecksum(bad); rejected(bad, core);
+        bad = resetBytes; bad.back() = 2; updateChecksum(bad); rejected(bad, core);
         bad = resetBytes; bad[28 + 537] = 42;
         updateChecksum(bad); rejected(bad, core);
         for (std::size_t size = 0; size < resetBytes.size(); size += 17)

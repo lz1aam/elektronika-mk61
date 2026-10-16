@@ -160,9 +160,16 @@ on; desktop keys start released. The current window layout is retained.
 Native states preserve processor registers, circulating memory, program,
 microtick phase and VFD state. Their versioned little-endian format includes
 ROM identification and a corruption checksum; invalid files are rejected
-before replacing the calculator state. These files are distinct from Android
+before replacing the calculator state. Version 2 also preserves the keyboard
+word sampled for the current four-bit cycle. Version 1 files can be loaded,
+but cannot exactly restore that previously unrecorded input word; they are
+saved as version 2 afterward. These files are distinct from Android
 Java `.pmk` files, which are not currently supported. Text program import and
 export remain separate menu actions.
+
+Keyboard contacts are sampled once per four-bit input word, with no key-event
+queue. A contact that is not sampled is not replayed later; the processor
+microcode still determines which sampled keys are acted on.
 
 ## License
 

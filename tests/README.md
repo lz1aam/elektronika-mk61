@@ -5,10 +5,13 @@ use `-DMK61_BUILD_GUI=OFF` and require neither Qt nor external reference files.
 Run `ctest --test-dir build-core -C Release -L core --output-on-failure --no-tests=error`.
 Use `-DCMAKE_COMPILE_WARNING_AS_ERROR=ON` to reject compiler warnings.
 
-Five portable core checks cover microcode execution and program-text
+Six portable core checks cover microcode execution and program-text
 round trips, manual-derived programs (including branches/registers/stack),
 signal-level input/output, clock batching, and full-state round trips and
-invalid-state rejection. Tests fail explicitly, not through release-disabled
+invalid-state rejection, and rapid-input word-phase regression. The latter
+replays the 12345679 × 9 multiplication report at all four bit offsets and
+compares complete state with a word-aligned input reference. Tests fail
+explicitly, not through release-disabled
 assertions. Matrix/semantics probes are diagnostic executables, not assertions
 registered with CTest.
 

@@ -20,12 +20,18 @@ public:
     void reset();
     void pressContact(unsigned row, unsigned column);
     void releaseContact();
-    KeyboardLines sample(unsigned zeroBasedDCount, bool displayStrobe);
+    // The bit-serial adapter consumes a complete K word over phases 0..3.
+    // Sample at phase 0 and hold that word through phase 3; changing a host
+    // contact halfway through must not splice two keyboard words together.
+    // No events are queued: only the current physical contact is sampled.
+    KeyboardLines sample(unsigned zeroBasedDCount, bool displayStrobe,
+                         unsigned bitPhase = 0);
     bool contactActive() const { return encodedContact_ != 0; }
 
 private:
     friend struct pmk::CoreStateCodec;
     std::uint16_t encodedContact_{};
+    KeyboardLines sampledLines_{};
 };
 
 // The Р/ГРД/Г switch selects an active-low scanned input of K745IK1303.

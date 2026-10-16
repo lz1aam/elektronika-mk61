@@ -36,12 +36,17 @@ add_executable(pmk-state-test ${CMAKE_CURRENT_LIST_DIR}/state.cpp)
 target_link_libraries(pmk-state-test PRIVATE pmk_core)
 add_test(NAME portable-full-state COMMAND pmk-state-test)
 
+add_executable(pmk-keyboard-phase-test ${CMAKE_CURRENT_LIST_DIR}/keyboard_phase.cpp)
+target_link_libraries(pmk-keyboard-phase-test PRIVATE pmk_core)
+add_test(NAME keyboard-word-phase COMMAND pmk-keyboard-phase-test)
+
 foreach(target pmk-hardware-io-test pmk-core-smoke pmk-program-regression-test
-        pmk-matrix-probe pmk-semantics-probe pmk-timing-test pmk-state-test)
+        pmk-matrix-probe pmk-semantics-probe pmk-timing-test pmk-state-test
+        pmk-keyboard-phase-test)
     mk61_test_warnings(${target})
 endforeach()
 set_tests_properties(core-microcode-smoke real-program-regression hardware-io
-    portable-clock-and-batching portable-full-state PROPERTIES
+    portable-clock-and-batching portable-full-state keyboard-word-phase PROPERTIES
     LABELS "core;portable" TIMEOUT 120)
 
 # Only the Qt-independent core is exercised on Windows and macOS for now.

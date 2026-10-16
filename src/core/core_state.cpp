@@ -7,7 +7,7 @@
 namespace pmk {
 namespace {
 constexpr std::array<std::uint8_t, 8> Magic = {'M','K','6','1','S','T','A','T'};
-constexpr std::uint16_t Version = 1;
+constexpr std::uint16_t Version = 2;
 constexpr std::size_t HeaderBytes = 20;
 
 void require(bool condition, const char* message) {
@@ -169,6 +169,8 @@ struct CoreStateCodec {
         for (auto code : tube.codes_) payload.byte(code);
         payload.boolean(tube.frameDriven_);
         for (const auto& row : core.stackDisplaySnapshots_) tubeFields(payload, row);
+        payload.boolean(core.hardware_.keyboard().sampledLines_.k1);
+        payload.boolean(core.hardware_.keyboard().sampledLines_.k2);
 
         Writer out;
         out.data.insert(out.data.end(), Magic.begin(), Magic.end());
@@ -190,7 +192,8 @@ struct CoreStateCodec {
         std::uint32_t size{}, checksum{};
         header.u16(version); header.u16(flags);
         header.u32(size); header.u32(checksum);
-        require(version == Version && flags == 0, "unsupported MK-61 state version");
+        require((version == 1 || version == Version) && flags == 0,
+                "unsupported MK-61 state version");
         const auto payload = bytes.subspan(HeaderBytes);
         require(size == payload.size(), "MK-61 state length mismatch");
         require(checksum == crc32(payload), "MK-61 state checksum mismatch");
@@ -227,6 +230,14 @@ struct CoreStateCodec {
         in.boolean(tube.frameDriven_);
         for (auto& stack : core.stackDisplaySnapshots_) {
             tubeFields(in, stack); validateTube(stack);
+        }
+        if (version >= 2) {
+            in.boolean(keyboard.sampledLines_.k1);
+            in.boolean(keyboard.sampledLines_.k2);
+        } else {
+            // v1 did not store the sampled input word. Adopt its saved contact
+            // as the initial word; exact mid-word continuation requires v2.
+            keyboard.sample(core.ik1302_.dcount, core.ik1302_.strobe(), 0);
         }
         require(in.offset == payload.size(), "unexpected data in MK-61 state");
         return core;
