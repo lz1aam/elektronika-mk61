@@ -1,5 +1,14 @@
 # Elektronika MK-61 Emulator
 
+## Download for Linux, Windows and macOS
+
+[Download v0.1.2 test packages](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)
+— choose your OS and CPU from the download table. No compilation is needed.
+
+This is a **pre-release for community testing**, not a stable release. Read the
+installation prerequisites and known security/signing limitations on that page.
+[Report test results or problems](https://github.com/lz1aam/elektronika-mk61/issues/new).
+
 Native Linux emulation of the Soviet **Elektronika MK-61** programmable RPN
 calculator, written in C++20 and Qt 6.
 
