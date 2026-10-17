@@ -111,10 +111,8 @@ elseif(WIN32 OR APPLE)
             DESTINATION "elektronika-mk61.app/Contents/Resources/licenses")
         set(CPACK_GENERATOR "DragNDrop")
         set(CPACK_DMG_VOLUME_NAME "Elektronika MK-61")
+        set(CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE OFF)
     endif()
-    qt_generate_deploy_app_script(TARGET elektronika-mk61
-        OUTPUT_SCRIPT qt_deploy_script NO_TRANSLATIONS)
-    install(SCRIPT "${qt_deploy_script}")
     # The CI source directory contains exact Qt module LICENSES and source links.
     set(MK61_QT_NOTICES_DIR "" CACHE PATH "Qt runtime license/provenance directory")
     if(NOT IS_DIRECTORY "${MK61_QT_NOTICES_DIR}")
@@ -127,6 +125,10 @@ elseif(WIN32 OR APPLE)
         install(DIRECTORY "${MK61_QT_NOTICES_DIR}/"
             DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/${PROJECT_NAME}/Qt")
     endif()
+    # Deploy last so adding resources cannot invalidate deployment signatures.
+    qt_generate_deploy_app_script(TARGET elektronika-mk61
+        OUTPUT_SCRIPT qt_deploy_script NO_TRANSLATIONS)
+    install(SCRIPT "${qt_deploy_script}")
 else()
     message(FATAL_ERROR "No desktop package format configured for ${CMAKE_SYSTEM_NAME}")
 endif()

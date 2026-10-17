@@ -66,7 +66,9 @@ def main():
             entry for entry in env.get("PATH", "").split(os.pathsep)
             if not os.path.normcase(os.path.normpath(entry)).startswith(normalized_sdk + os.sep)
             and os.path.normcase(os.path.normpath(entry)) != normalized_sdk)
-    env["QT_QPA_PLATFORM"] = "offscreen"
+    # Deployment intentionally ships native plugins, not SDK-only offscreen
+    # testing plugins. Exercise the native backend on desktop CI hosts.
+    env["QT_QPA_PLATFORM"] = {"darwin": "cocoa", "win32": "windows"}.get(sys.platform, "offscreen")
     # Use a non-SDK working directory as well as a cleaned environment.
     subprocess.run([str(executable), "--smoke-test"], cwd=prefix, env=env,
                    check=True, timeout=30)
