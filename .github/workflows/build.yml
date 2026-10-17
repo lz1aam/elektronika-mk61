@@ -12,7 +12,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - name: Configure standalone core
         run: >-
           cmake -S . -B build-core
@@ -31,7 +31,7 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - name: Install Qt 6 build dependencies
         run: sudo apt-get update && sudo apt-get install -y qt6-base-dev libqt6svg6
       - name: Configure
