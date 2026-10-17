@@ -47,12 +47,12 @@ with `./uninstall.sh` if necessary.
 ## Windows and macOS
 
 Requires a C++20 compiler, CMake, matching Qt Widgets/SVG/image-formats SDK and
-Python 3.11+. Windows also requires NSIS 3.03+. CI pins Qt 6.11.2 and aqtinstall
+Python 3.11+. Windows also requires NSIS 3.03+. CI pins Qt 6.9.3 and aqtinstall
 3.3.0. Qt libraries/plugins are dynamically deployed through Qt's deployment
 tools. Native ICO/ICNS icons are rendered from the existing project SVG.
 
 ```sh
-python3 packaging/prepare_qt_sources.py --version 6.11.2 \
+python3 packaging/prepare_qt_sources.py --version 6.9.3 \
   --sources build-package/packages/qt-sources --notices build-package/qt-notices
 cmake -S . -B build-package -DCMAKE_BUILD_TYPE=Release \
   -DMK61_ENABLE_PACKAGING=ON -DMK61_DEPLOY_QT=ON \

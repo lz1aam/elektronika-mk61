@@ -65,14 +65,20 @@ jobs:
       run:
         shell: bash
     env:
-      QT_VERSION: '6.11.2'
-      QT_ROOT_DIR: ${{ github.workspace }}/Qt/6.11.2/${{ matrix.qt_arch }}
+      QT_VERSION: '6.9.3'
+      QT_ROOT_DIR: ${{ github.workspace }}/Qt/6.9.3/${{ matrix.qt_arch }}
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Install Qt SDK
         run: |
-          python3 -m pip install aqtinstall==3.3.0
-          python3 -m aqt install-qt '${{ matrix.qt_host }}' desktop "$QT_VERSION" '${{ matrix.qt_arch }}' --outputdir Qt --modules qtsvg qtimageformats
+          python3 -m venv build-aqt
+          if [ "$RUNNER_OS" = Windows ]; then
+            aqt_python=build-aqt/Scripts/python.exe
+          else
+            aqt_python=build-aqt/bin/python
+          fi
+          "$aqt_python" -m pip install aqtinstall==3.3.0
+          "$aqt_python" -m aqt install-qt '${{ matrix.qt_host }}' desktop "$QT_VERSION" '${{ matrix.qt_arch }}' --outputdir Qt --archives qtbase qtsvg qtimageformats
           echo "$QT_ROOT_DIR/bin" >> "$GITHUB_PATH"
       - name: Collect exact Qt source and license notices
         run: python3 packaging/prepare_qt_sources.py --version "$QT_VERSION" --sources build-package/packages/qt-sources --notices build-package/qt-notices

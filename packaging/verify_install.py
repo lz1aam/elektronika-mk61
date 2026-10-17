@@ -48,9 +48,11 @@ def main():
         env.pop(name, None)
     sdk = env.get("QT_ROOT_DIR", "")
     if sdk:
+        normalized_sdk = os.path.normcase(os.path.normpath(sdk))
         env["PATH"] = os.pathsep.join(
             entry for entry in env.get("PATH", "").split(os.pathsep)
-            if sdk.casefold() not in entry.casefold())
+            if not os.path.normcase(os.path.normpath(entry)).startswith(normalized_sdk + os.sep)
+            and os.path.normcase(os.path.normpath(entry)) != normalized_sdk)
     env["QT_QPA_PLATFORM"] = "offscreen"
     # Use a non-SDK working directory as well as a cleaned environment.
     subprocess.run([str(executable), "--smoke-test"], cwd=prefix, env=env,

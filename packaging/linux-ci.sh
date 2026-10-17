@@ -7,7 +7,7 @@ case "$family" in
     deb)
         apt-get update
         if [ "$mode" = build ]; then
-            apt-get install -y --no-install-recommends cmake g++ make qt6-base-dev libqt6svg6 dpkg-dev python3 desktop-file-utils
+            apt-get install -y --no-install-recommends cmake g++ make qt6-base-dev libqt6svg6 dpkg-dev file python3 desktop-file-utils
         else
             apt-get install -y --no-install-recommends python3 desktop-file-utils /source/build-package/packages/*.deb
         fi

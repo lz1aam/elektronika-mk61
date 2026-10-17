@@ -39,6 +39,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Fedora and openSUSE use different names for the dynamically loaded plugin.
     set(MK61_RPM_QT_SVG_PACKAGE "qt6-qtsvg" CACHE STRING "Distribution package providing Qt's SVG plugin")
     set(CPACK_RPM_PACKAGE_REQUIRES "${MK61_RPM_QT_SVG_PACKAGE}")
+    # Minimal RPM images may exclude %doc; licenses must still be installed.
+    set(CPACK_RPM_USER_FILELIST
+        "%license /usr/share/doc/${PROJECT_NAME}/LICENSE"
+        "%license /usr/share/doc/${PROJECT_NAME}/NOTICE"
+        "%license /usr/share/doc/${PROJECT_NAME}/DejaVu-LICENSE.txt")
     set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
         /usr/share/applications /usr/share/icons /usr/share/icons/hicolor
         /usr/share/icons/hicolor/scalable /usr/share/icons/hicolor/scalable/apps)
