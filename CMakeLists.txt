@@ -10,6 +10,8 @@ include(CMakePackageConfigHelpers)
 include(CTest)
 option(MK61_BUILD_GUI "Build the Qt desktop application" ON)
 option(MK61_INSTALL_DEVELOPMENT "Install core libraries, headers and CMake package" OFF)
+option(MK61_ENABLE_PACKAGING "Configure platform packages with CPack" OFF)
+option(MK61_DEPLOY_QT "Bundle Qt runtime (Windows/macOS only)" OFF)
 
 add_library(pmk_hardware STATIC
     src/hardware/calculator_io.cpp
@@ -108,5 +110,11 @@ endif()
 
 if(BUILD_TESTING)
     add_subdirectory(tests)
+endif()
+
+if(MK61_ENABLE_PACKAGING)
+    include(packaging/Packages.cmake)
+elseif(MK61_DEPLOY_QT)
+    message(FATAL_ERROR "MK61_DEPLOY_QT requires MK61_ENABLE_PACKAGING")
 endif()
 

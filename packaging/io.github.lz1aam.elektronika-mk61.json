@@ -1,0 +1,29 @@
+{
+  "app-id": "io.github.lz1aam.elektronika-mk61",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "6.11",
+  "sdk": "org.kde.Sdk",
+  "command": "elektronika-mk61",
+  "rename-desktop-file": "elektronika-mk61.desktop",
+  "rename-icon": "elektronika-mk61",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=fallback-x11",
+    "--socket=wayland",
+    "--device=dri"
+  ],
+  "modules": [
+    {
+      "name": "elektronika-mk61",
+      "buildsystem": "cmake-ninja",
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=OFF",
+        "-DMK61_INSTALL_DEVELOPMENT=OFF"
+      ],
+      "sources": [
+        {"type": "archive", "path": "../build-flatpak/source.tar.gz"}
+      ]
+    }
+  ]
+}
