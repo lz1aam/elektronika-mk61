@@ -69,6 +69,10 @@ jobs:
       QT_VERSION: '6.9.3'
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Install Windows installer tools
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install nsis --yes --no-progress
       - name: Install Qt SDK
         run: |
           python3 -m venv build-aqt
