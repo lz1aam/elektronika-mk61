@@ -5,6 +5,7 @@
 
 #include <QFile>
 #include <QFileDialog>
+#include <QSaveFile>
 #include <QFontDatabase>
 #include <QFontMetricsF>
 #include <QKeyEvent>
@@ -19,6 +20,7 @@
 #include <array>
 #include <cmath>
 #include <optional>
+#include <stdexcept>
 
 namespace {
 
@@ -325,25 +327,9 @@ CalculatorWidget::CalculatorWidget(QWidget* parent) : QWidget(parent) {
     timer_->setTimerType(Qt::PreciseTimer);
     emulationClock_.start();
     connect(timer_, &QTimer::timeout, this, [this] {
-        constexpr qint64 NanosecondsPerSecond = 1'000'000'000;
-        constexpr qint64 EmulatedTicksPerSecond = 168'000;
-        constexpr qint64 MaximumCatchUpNanoseconds = 100'000'000;
-        const qint64 elapsed = std::clamp(
-            emulationClock_.nsecsElapsed(), qint64(0),
-            MaximumCatchUpNanoseconds);
-        emulationClock_.restart();
+        advanceEmulationToNow();
         if (!powered_)
             return;
-
-        // Advance from monotonic elapsed time rather than assuming that every
-        // GUI timeout arrived exactly on schedule. A bounded 100 ms catch-up
-        // preserves normal timing without creating a resume-after-suspend
-        // storm. Fractional ticks carry into the next callback.
-        tickRemainder_ += elapsed * EmulatedTicksPerSecond;
-        const auto ticks = static_cast<std::size_t>(
-            tickRemainder_ / NanosecondsPerSecond);
-        tickRemainder_ %= NanosecondsPerSecond;
-        core_.advanceTicks(ticks);
 
         // Painting the complete panel at the former 125 Hz was needlessly
         // expensive; cap VFD presentation near 31 Hz.
@@ -356,6 +342,15 @@ CalculatorWidget::CalculatorWidget(QWidget* parent) : QWidget(parent) {
         }
     });
     timer_->start(16);
+}
+
+void CalculatorWidget::advanceEmulationToNow() {
+    const auto elapsed = static_cast<std::uint64_t>(
+        std::max(emulationClock_.nsecsElapsed(), qint64(0)));
+    emulationClock_.restart();
+    if (!powered_)
+        return;
+    core_.advanceTicks(realtimeClock_.consumeNanoseconds(elapsed));
 }
 
 bool CalculatorWidget::displayStateChanged() {
@@ -438,6 +433,7 @@ bool CalculatorWidget::selectAngleModeAt(const QPointF& p) {
     const int position = nearestSlidePosition(angleSwitchSpec(), p);
     if (position < 0)
         return false;
+    advanceEmulationToNow();
     if (position == 0)
         angleMode_ = pmk::AngleMode::Radians;
     else if (position == 1)
@@ -449,21 +445,15 @@ bool CalculatorWidget::selectAngleModeAt(const QPointF& p) {
     return true;
 }
 
-bool CalculatorWidget::selectModelAt(const QPointF& p) {
-    if (powered_ || !QRectF(6, 101, 260, 40).contains(p))
-        return false;
-    model_ = model_ == pmk::CalculatorModel::MK61
-           ? pmk::CalculatorModel::MK54 : pmk::CalculatorModel::MK61;
-    core_.setModel(model_);
-    update();
-    return true;
-}
-
 void CalculatorWidget::setPowered(bool powered) {
     if (powered_ == powered)
         return;
+    advanceEmulationToNow();
     powered_ = powered;
     pressed_ = -1;
+    activeHostKey_ = 0;
+    activeScanCode_ = 0;
+    mouseContact_ = false;
     core_.releaseKey();
     fIndicator_ = false;
     kIndicator_ = false;
@@ -471,7 +461,7 @@ void CalculatorWidget::setPowered(bool powered) {
     // character codes before and after reset happen to be identical.
     displayStateInitialized_ = false;
     displayRefreshFrames_ = 3;
-    tickRemainder_ = 0;
+    realtimeClock_.reset();
     emulationClock_.restart();
     if (powered_) {
         core_.reset();
@@ -494,12 +484,18 @@ bool CalculatorWidget::showProgramMenuAt(const QPointF& p,
     QMenu menu(this);
     QAction* load = menu.addAction(tr("Load text program…"));
     QAction* save = menu.addAction(tr("Save text program…"));
-    const bool available = powered_ && model_ == pmk::CalculatorModel::MK61;
+    menu.addSeparator();
+    QAction* loadState = menu.addAction(tr("Load calculator state…"));
+    QAction* saveState = menu.addAction(tr("Save calculator state…"));
+    const bool available = powered_;
     load->setEnabled(available);
     save->setEnabled(available);
+    saveState->setEnabled(available);
     QAction* selected = menu.exec(globalPosition);
     if (selected == load) loadTextProgram();
     if (selected == save) saveTextProgram();
+    if (selected == loadState) loadNativeState();
+    if (selected == saveState) saveNativeState();
     return true;
 }
 
@@ -515,9 +511,13 @@ void CalculatorWidget::loadTextProgram() {
     }
     try {
         const QByteArray contents = file.readAll();
+        if (file.error() != QFileDevice::NoError)
+            throw std::runtime_error(file.errorString().toStdString());
         const auto parsed = pmk::importProgramText(
             std::string_view(contents.constData(), std::size_t(contents.size())));
+        advanceEmulationToNow();
         core_.importProgram(parsed.bytes);
+        emulationClock_.restart();
         update();
     } catch (const std::exception& error) {
         QMessageBox::warning(this, tr("PMK program"),
@@ -531,15 +531,21 @@ void CalculatorWidget::saveTextProgram() {
         tr("PMK text programs (*.txt);;All files (*)"));
     if (path.isEmpty())
         return;
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, tr("PMK program"), file.errorString());
-        return;
-    }
     try {
+        advanceEmulationToNow();
         const std::string text = pmk::exportProgramText(core_.exportProgram());
+        emulationClock_.restart();
+        QSaveFile file(path);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QMessageBox::warning(this, tr("PMK program"), file.errorString());
+            return;
+        }
         if (file.write(text.data(), static_cast<qint64>(text.size())) !=
-            static_cast<qint64>(text.size()))
+            static_cast<qint64>(text.size())) {
+            QMessageBox::warning(this, tr("PMK program"), file.errorString());
+            return;
+        }
+        if (!file.commit())
             QMessageBox::warning(this, tr("PMK program"), file.errorString());
     } catch (const std::exception& error) {
         QMessageBox::warning(this, tr("PMK program"),
@@ -547,9 +553,83 @@ void CalculatorWidget::saveTextProgram() {
     }
 }
 
+void CalculatorWidget::loadNativeState() {
+    const auto path = QFileDialog::getOpenFileName(this,
+        tr("Load calculator state"), {},
+        tr("MK-61 native state (*.mk61state);;All files (*)"));
+    if (path.isEmpty())
+        return;
+    try {
+        loadNativeStateFile(path);
+    } catch (const std::exception& error) {
+        QMessageBox::warning(this, tr("Calculator state"),
+                             QString::fromUtf8(error.what()));
+    }
+}
+
+void CalculatorWidget::saveNativeState() {
+    const auto path = QFileDialog::getSaveFileName(this,
+        tr("Save calculator state"), QStringLiteral("calculator.mk61state"),
+        tr("MK-61 native state (*.mk61state);;All files (*)"));
+    if (path.isEmpty())
+        return;
+    try {
+        saveNativeStateFile(path);
+    } catch (const std::exception& error) {
+        QMessageBox::warning(this, tr("Calculator state"),
+                             QString::fromUtf8(error.what()));
+    }
+}
+
+void CalculatorWidget::loadNativeStateFile(const QString& path) {
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+        throw std::runtime_error(file.errorString().toStdString());
+    const auto bytes = file.read(static_cast<qint64>(pmk::CalculatorCore::MaximumStateBytes) + 1);
+    if (file.error() != QFileDevice::NoError)
+        throw std::runtime_error(file.errorString().toStdString());
+    pmk::CalculatorCore restored;
+    restored.loadState(std::span<const std::uint8_t>(
+        reinterpret_cast<const std::uint8_t*>(bytes.constData()),
+        static_cast<std::size_t>(bytes.size())));
+    // A saved electrical contact has no corresponding held desktop key after
+    // loading. Core API restores it exactly; this frontend explicitly lets go.
+    restored.releaseKey();
+    core_ = std::move(restored);
+    angleMode_ = core_.angleMode();
+    powered_ = true;
+    pressed_ = -1;
+    activeHostKey_ = 0;
+    activeScanCode_ = 0;
+    mouseContact_ = false;
+    fIndicator_ = false;
+    kIndicator_ = false;
+    realtimeClock_.reset();
+    emulationClock_.restart();
+    displayStateInitialized_ = false;
+    displayRefreshFrames_ = 3;
+    update();
+}
+
+void CalculatorWidget::saveNativeStateFile(const QString& path) {
+    if (!powered_)
+        throw std::runtime_error("power on the calculator before saving its state");
+    advanceEmulationToNow();
+    const auto bytes = core_.saveState();
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly) ||
+        file.write(reinterpret_cast<const char*>(bytes.data()),
+                   static_cast<qint64>(bytes.size())) != static_cast<qint64>(bytes.size()) ||
+        !file.commit())
+        throw std::runtime_error(file.errorString().toStdString());
+}
+
 void CalculatorWidget::pressKeyIndex(int index) {
     if (!powered_ || index < 0 || index >= int(Keys.size()))
         return;
+    if (pressed_ >= 0)
+        return;
+    advanceEmulationToNow();
     pressed_ = index;
     const auto physicalKey = Keys[index].physicalKey;
     const bool wasF = fIndicator_;
@@ -566,12 +646,20 @@ void CalculatorWidget::pressKeyIndex(int index) {
 }
 
 void CalculatorWidget::releaseCurrentKey() {
+    advanceEmulationToNow();
     core_.releaseKey();
     pressed_ = -1;
+    activeHostKey_ = 0;
+    activeScanCode_ = 0;
+    mouseContact_ = false;
     update();
 }
 
 void CalculatorWidget::mousePressEvent(QMouseEvent* event) {
+    if (event->button() != Qt::LeftButton) {
+        QWidget::mousePressEvent(event);
+        return;
+    }
     QPointF logical = toLogical(event->position());
     const int activeDisplayHeight = stackDisplayExpanded_
         ? ExpandedDisplayHeight : DisplayHeight;
@@ -586,15 +674,18 @@ void CalculatorWidget::mousePressEvent(QMouseEvent* event) {
         return;
     if (togglePowerAt(logical))
         return;
-    if (selectModelAt(logical))
-        return;
     // The mechanical angle selector remains movable without electrical power.
-    if (!selectAngleModeAt(logical) && powered_)
+    if (!selectAngleModeAt(logical) && powered_ && pressed_ < 0) {
         pressKeyIndex(keyAt(logical));
+        mouseContact_ = pressed_ >= 0;
+    }
 }
 
-void CalculatorWidget::mouseReleaseEvent(QMouseEvent*) {
-    releaseCurrentKey();
+void CalculatorWidget::mouseReleaseEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton && mouseContact_)
+        releaseCurrentKey();
+    else
+        QWidget::mouseReleaseEvent(event);
 }
 
 void CalculatorWidget::keyPressEvent(QKeyEvent* event) {
@@ -629,18 +720,21 @@ void CalculatorWidget::keyPressEvent(QKeyEvent* event) {
         case Qt::Key_F: physicalKey = pmk::PhysicalKey::F; break;
         case Qt::Key_K: physicalKey = pmk::PhysicalKey::K; break;
         case Qt::Key_R:
+            advanceEmulationToNow();
             angleMode_ = pmk::AngleMode::Radians;
             core_.setAngleMode(angleMode_);
             update();
             event->accept();
             return;
         case Qt::Key_D:
+            advanceEmulationToNow();
             angleMode_ = pmk::AngleMode::Degrees;
             core_.setAngleMode(angleMode_);
             update();
             event->accept();
             return;
         case Qt::Key_G:
+            advanceEmulationToNow();
             angleMode_ = pmk::AngleMode::Grads;
             core_.setAngleMode(angleMode_);
             update();
@@ -650,9 +744,15 @@ void CalculatorWidget::keyPressEvent(QKeyEvent* event) {
         }
     }
     if (physicalKey) {
+        if (pressed_ >= 0) {
+            event->accept();
+            return;
+        }
         for (int i = 0; i < int(Keys.size()); ++i)
             if (Keys[i].physicalKey == *physicalKey) {
                 pressKeyIndex(i);
+                activeHostKey_ = event->key();
+                activeScanCode_ = event->nativeScanCode();
                 event->accept();
                 return;
             }
@@ -661,7 +761,11 @@ void CalculatorWidget::keyPressEvent(QKeyEvent* event) {
 }
 
 void CalculatorWidget::keyReleaseEvent(QKeyEvent* event) {
-    if (!event->isAutoRepeat() && pressed_ >= 0) {
+    const bool matchesContact = activeScanCode_ != 0
+        ? event->nativeScanCode() == activeScanCode_
+        : event->key() == activeHostKey_;
+    if (!event->isAutoRepeat() && pressed_ >= 0 && !mouseContact_ &&
+        matchesContact) {
         releaseCurrentKey();
         event->accept();
         return;
@@ -742,9 +846,7 @@ void CalculatorWidget::paintEvent(QPaintEvent* event) {
                        QStringLiteral("ЭЛЕКТРОНИКА"));
     drawInkAlignedText(p, QRectF(315, 105, 105, 32),
                        Qt::AlignCenter,
-                       model_ == pmk::CalculatorModel::MK61
-                           ? QStringLiteral("МК 61")
-                           : QStringLiteral("МК-54"));
+                       QStringLiteral("МК 61"));
 
     // The real machine uses compact raised slide switches. The deliberately
     // larger invisible hit regions remain convenient for mouse/touch input.
@@ -783,8 +885,7 @@ void CalculatorWidget::paintEvent(QPaintEvent* event) {
         const QRectF labelRect(col * KeyCellWidth + 5,
                                KeyboardTop + row * KeyCellHeight + 3,
                                KeyCellWidth - 10, 22);
-        const bool showBlue = model_ == pmk::CalculatorModel::MK61 &&
-                              Keys[i].lower[0] != '\0';
+        const bool showBlue = Keys[i].lower[0] != '\0';
         const QString upperLabel = QString::fromUtf8(Keys[i].upper);
         const auto upperSymbol = upperPanelSymbol(Keys[i].physicalKey);
         const auto lowerSymbol = lowerPanelSymbol(Keys[i].physicalKey);
@@ -815,21 +916,11 @@ void CalculatorWidget::paintEvent(QPaintEvent* event) {
                         QColor(83, 203, 229), lowerSymbol);
         }
 
-        const auto physicalKey = Keys[i].physicalKey;
         QFont buttonFont = letteringFont(LetteringRole::KeyCap);
         QString mainLabel = QString::fromUtf8(Keys[i].main);
         p.setFont(buttonFont);
         p.setPen(Keys[i].color == 1 || Keys[i].color == 2
                      ? QColor(13, 14, 14) : QColor(235, 237, 234));
-        if (model_ == pmk::CalculatorModel::MK54 &&
-            Keys[i].physicalKey == pmk::PhysicalKey::Clear)
-            mainLabel = QStringLiteral("Cx");
-        if (model_ == pmk::CalculatorModel::MK54 &&
-            Keys[i].physicalKey == pmk::PhysicalKey::ExchangeXY)
-        {
-            mainLabel = QStringLiteral("XY");
-            p.setFont(buttonFont);
-        }
         QRectF textRect = r;
         if (i == pressed_)
             textRect.translate(0.0, 2.0);
@@ -843,8 +934,5 @@ void CalculatorWidget::paintEvent(QPaintEvent* event) {
                            Qt::AlignCenter,
                            QString(QChar('a' + col - 1)));
     }
-    if (model_ == pmk::CalculatorModel::MK54)
-        drawInkAlignedText(p, QRectF(0, 776, KeyCellWidth, 20),
-                           Qt::AlignCenter, QStringLiteral("НОП"));
 }
 

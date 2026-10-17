@@ -8,13 +8,20 @@ compile_commands.json
 # Full upstream checkouts are audit inputs, not project dependencies.
 /upstream/
 
-# Local research, verification, and agent instructions are not published.
+# Local research and agent instructions are not published. Tests live in tests/.
 /docs/
 /.tests/
 /resources/reference/
 /AGENTS.md
+/CODEX_KICKOFF.md
+/.github/agents/
+/.github/prompts/
+/.github/copilot-instructions.md
 
 # Local agent/runtime metadata
 /.agents/
 /.aws/
 /.codex/
+/.claude/
+/.cursor/
+/.cursorrules

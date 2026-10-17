@@ -6,6 +6,7 @@ namespace pmk::hardware {
 
 void KeyboardMatrix::reset() {
     encodedContact_ = 0;
+    sampledLines_ = {};
 }
 
 void KeyboardMatrix::pressContact(unsigned row, unsigned column) {
@@ -19,8 +20,11 @@ void KeyboardMatrix::releaseContact() {
 }
 
 KeyboardLines KeyboardMatrix::sample(unsigned zeroBasedDCount,
-                                     bool displayStrobe) {
-    KeyboardLines lines{};
+                                     bool displayStrobe, unsigned bitPhase) {
+    if (bitPhase != 0)
+        return sampledLines_;
+    sampledLines_ = {};
+    auto& lines = sampledLines_;
     if (!displayStrobe)
         return lines;
 

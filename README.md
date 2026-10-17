@@ -1,7 +1,12 @@
 # Elektronika MK-61 Emulator
 
-Native Linux emulation of the Soviet **Elektronika MK-61** and **MK-54**
-programmable RPN calculators, written in C++20 and Qt 6.
+Native Linux emulation of the Soviet **Elektronika MK-61** programmable RPN
+calculator, written in C++20 and Qt 6.
+
+Current source version: **0.1.2**. See [release notes](CHANGELOG.md).
+
+The calculator core is a separate C++20 library with no Qt or Linux API
+dependency. The desktop application currently targets Linux.
 
 | Original display | Expanded four-row VFD stack |
 |:--:|:--:|
@@ -16,11 +21,14 @@ official release of PMK-Android, EMU145, or the original manufacturer.
 ## Current features
 
 - Native Qt Widgets interface with mouse and keyboard input.
-- MK-61 and MK-54 model selection.
+- MK-61 panel and calculator behavior.
 - Authentic microcode execution, RPN stack, registers, and program memory.
 - Hardware-driven VFD rendering and optional four-row `T/Z/Y/X` stack view.
 - Import and export of PMK-Android-style mnemonic text programs.
+- Save and resume complete native calculator states (`.mk61state`).
 - Linux desktop launcher and scalable application icon.
+
+Only MK-61 is supported; there is no MK-54 mode or model selector.
 
 The native core is derived from EMU145 commit
 `02a8286c8e839c4e325982ff4967e89025c6e626`; the behavioral and interface
@@ -29,14 +37,69 @@ reference is PMK-Android commit
 
 ## Build
 
-Requirements: CMake 3.20+, a C++20 compiler, and Qt 6 Widgets development
-files (`qt6-base-dev` on Debian/Ubuntu).
+Requirements: CMake 3.20+, a C++20 compiler, Qt 6 Widgets development
+files (`qt6-base-dev` on Debian/Ubuntu), and the Qt SVG runtime module
+(`libqt6svg6`) for the application icon.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ./build/elektronika-mk61
 ```
+
+To build only the core, without Qt:
+
+```sh
+cmake -S . -B build-core -DMK61_BUILD_GUI=OFF -DCMAKE_BUILD_TYPE=Release
+cmake --build build-core --config Release
+```
+
+For use in another CMake project, also configure with
+`-DMK61_INSTALL_DEVELOPMENT=ON`, then install to your chosen prefix. Consumers
+can use `find_package(MK61 CONFIG REQUIRED)` and link `MK61::Core`; the package
+provides its C++20 requirement and hardware-library dependency automatically.
+Set `CMAKE_PREFIX_PATH` to that installation prefix when configuring a consumer.
+Development files are excluded from the normal desktop installation.
+
+The core advances by explicit microticks. An optional `pmk::RealtimeClock`
+adapter converts monotonic elapsed nanoseconds to the 168 kHz target and
+carries fractional ticks between calls. It caps each elapsed interval at
+100 ms to bound work after a host suspension. Frontends should advance the
+core before changing input contacts. The adapter itself reads no system clock.
+
+Build configurations cover GCC/Clang and MSVC. Linux desktop integration is
+enabled only on Linux; Qt targets use a Windows GUI executable or macOS app
+bundle on those systems. Windows/macOS deployment and ARM execution still
+require platform validation and dependency packaging.
+
+## Verification
+
+Portable core checks require no Qt:
+
+```sh
+cmake -S . -B build-core -DMK61_BUILD_GUI=OFF -DBUILD_TESTING=ON -DMK61_INSTALL_DEVELOPMENT=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+cmake --build build-core --config Release --parallel 2
+ctest --test-dir build-core -C Release -L core --output-on-failure --no-tests=error
+cmake --install build-core --config Release --prefix core-install
+```
+
+CI is configured to build, run these checks and install the development
+package on Ubuntu, Windows and macOS. Remote platform results must be checked
+after the workflow runs. Qt GUI checks are enabled only on Linux
+and require Qt 6 Test as well as Widgets (both supplied by `qt6-base-dev`):
+
+```sh
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 2
+ctest --test-dir build -C Release --output-on-failure --no-tests=error
+```
+
+GUI checks use Qt's offscreen platform; they do not establish native desktop
+or visual fidelity on other operating systems. Set `-DBUILD_TESTING=OFF` to
+build only the application or libraries. See [test notes](tests/README.md)
+for coverage and reference provenance.
+
+## Installation
 
 Install for the current user:
 
@@ -50,7 +113,8 @@ of the manual `build/` directory shown above.
 This installs the executable as `~/.local/bin/elektronika-mk61`, the launcher
 under `~/.local/share/applications`, and the icon under
 `~/.local/share/icons/hicolor`. License and attribution files are installed
-under `~/.local/share/doc/elektronika-mk61`. The desktop and icon caches are refreshed
+under `~/.local/share/doc/elektronika-mk61`, including the bundled font licence.
+The desktop and icon caches are refreshed
 automatically when the corresponding cache utilities are available. The
 launcher follows the freedesktop/XDG layout and does not depend on GNOME, KDE
 Plasma, XFCE, LXQt, or another particular desktop environment. Menus normally
@@ -86,7 +150,26 @@ cmake --install build --prefix "$HOME/.local"
 Digits, decimal point/comma, Enter, `+`, `-`, `*`, `/`, Backspace/Escape,
 `F`, and `K` map to calculator keys. `R`, `G`, and `D` select radians, grads,
 and degrees; `F12` toggles power. Click the powered display to toggle the
-four-row stack view. While powered off, click the model name to switch model.
+four-row stack view.
+
+Click the printed `ВКЛ` caption beside the power switch to open the file menu.
+Use **Save calculator state…** and **Load calculator state…** for `.mk61state`
+files. Loading restores the machine and angle switch and powers the interface
+on; desktop keys start released. The current window layout is retained.
+
+Native states preserve processor registers, circulating memory, program,
+microtick phase and VFD state. Their versioned little-endian format includes
+ROM identification and a corruption checksum; invalid files are rejected
+before replacing the calculator state. Version 2 also preserves the keyboard
+word sampled for the current four-bit cycle. Version 1 files can be loaded,
+but cannot exactly restore that previously unrecorded input word; they are
+saved as version 2 afterward. These files are distinct from Android
+Java `.pmk` files, which are not currently supported. Text program import and
+export remain separate menu actions.
+
+Keyboard contacts are sampled once per four-bit input word, with no key-event
+queue. A contact that is not sampled is not replayed later; the processor
+microcode still determines which sampled keys are acted on.
 
 ## License
 

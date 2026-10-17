@@ -5,21 +5,43 @@ on:
   pull_request:
 
 jobs:
+  portable-core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure standalone core
+        run: >-
+          cmake -S . -B build-core
+          -DMK61_BUILD_GUI=OFF
+          -DMK61_INSTALL_DEVELOPMENT=ON
+          -DBUILD_TESTING=ON
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+      - name: Build standalone core
+        run: cmake --build build-core --config Release --parallel 2
+      - name: Run portable core tests
+        run: ctest --test-dir build-core -C Release -L core --output-on-failure --no-tests=error
+      - name: Install standalone core
+        run: cmake --install build-core --config Release --prefix core-install
+
   linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Qt 6 build dependencies
-        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev libqt6svg6
       - name: Configure
         run: >-
           cmake -S . -B build
           -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
       - name: Build
         run: cmake --build build -j 2
-      - name: Startup smoke test
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: ./build/elektronika-mk61 --smoke-test
+      - name: Run core and offscreen Qt tests
+        run: ctest --test-dir build -C Release --output-on-failure --no-tests=error
 
