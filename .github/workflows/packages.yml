@@ -1,0 +1,182 @@
+name: Packages
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-native:
+    name: package (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: ubuntu-24.04-x86_64, runner: ubuntu-24.04, image: 'ubuntu:24.04', family: deb}
+          - {name: ubuntu-24.04-aarch64, runner: ubuntu-24.04-arm, image: 'ubuntu:24.04', family: deb}
+          - {name: debian-12-x86_64, runner: ubuntu-24.04, image: 'debian:bookworm', family: deb}
+          - {name: fedora-43-x86_64, runner: ubuntu-24.04, image: 'fedora:43', family: rpm}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Include corresponding application source
+        run: |
+          mkdir -p build-package/packages
+          git archive --format=tar.gz --prefix=elektronika-mk61/ --output=build-package/packages/elektronika-mk61-source.tar.gz HEAD
+      - name: Build and test in target distribution
+        run: >-
+          docker run --rm -v "$GITHUB_WORKSPACE:/source" -w /source
+          '${{ matrix.image }}' sh packaging/linux-ci.sh build '${{ matrix.family }}'
+      - name: Install, start, reinstall and remove in a clean runtime container
+        run: >-
+          docker run --rm -v "$GITHUB_WORKSPACE:/source:ro" -w /source
+          '${{ matrix.image }}' sh packaging/linux-ci.sh verify '${{ matrix.family }}'
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            build-package/packages/*.deb
+            build-package/packages/*.rpm
+            build-package/packages/*source.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  desktop:
+    name: package (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: windows-x86_64, runner: windows-latest, qt_host: windows, qt_arch: win64_msvc2022_64, cmake_args: '-A x64'}
+          - {name: macos-aarch64, runner: macos-15, qt_host: mac, qt_arch: clang_64, cmake_args: '-DCMAKE_OSX_ARCHITECTURES=arm64'}
+          - {name: macos-x86_64, runner: macos-15-intel, qt_host: mac, qt_arch: clang_64, cmake_args: '-DCMAKE_OSX_ARCHITECTURES=x86_64'}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    env:
+      QT_VERSION: '6.11.2'
+      QT_ROOT_DIR: ${{ github.workspace }}/Qt/6.11.2/${{ matrix.qt_arch }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Qt SDK
+        run: |
+          python3 -m pip install aqtinstall==3.3.0
+          python3 -m aqt install-qt '${{ matrix.qt_host }}' desktop "$QT_VERSION" '${{ matrix.qt_arch }}' --outputdir Qt --modules qtsvg qtimageformats
+          echo "$QT_ROOT_DIR/bin" >> "$GITHUB_PATH"
+      - name: Collect exact Qt source and license notices
+        run: python3 packaging/prepare_qt_sources.py --version "$QT_VERSION" --sources build-package/packages/qt-sources --notices build-package/qt-notices
+      - name: Configure desktop and deployment
+        run: >-
+          cmake -S . -B build-package ${{ matrix.cmake_args }}
+          -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR"
+          -DMK61_ENABLE_PACKAGING=ON -DMK61_DEPLOY_QT=ON
+          -DMK61_QT_NOTICES_DIR="$GITHUB_WORKSPACE/build-package/qt-notices"
+          -DBUILD_TESTING=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+      - name: Build desktop
+        run: cmake --build build-package --config Release --parallel 2
+      - name: Core and GUI startup checks
+        run: ctest --test-dir build-package -C Release --output-on-failure --no-tests=error
+      - name: Stage deployed application
+        run: cmake --install build-package --config Release --prefix "$GITHUB_WORKSPACE/build-package/stage"
+      - name: Verify deployed application without SDK environment
+        run: python3 packaging/verify_install.py build-package/stage
+      - name: Build Windows ZIP and installer
+        if: runner.os == 'Windows'
+        run: |
+          export PATH="/c/Program Files (x86)/NSIS:$PATH"
+          cpack --config build-package/CPackConfig.cmake -C Release -G 'ZIP;NSIS'
+      - name: Build macOS disk image
+        if: runner.os == 'macOS'
+        run: cpack --config build-package/CPackConfig.cmake -C Release -G DragNDrop
+      - name: Verify Windows ZIP payload
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem build-package/packages/*.zip | Select-Object -First 1
+          Expand-Archive $archive.FullName build-package/unpacked
+          $root = Get-ChildItem build-package/unpacked -Directory | Select-Object -First 1
+          python3 packaging/verify_install.py $root.FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify Windows installer and uninstaller
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem build-package/packages/*.exe | Select-Object -First 1
+          $destination = Join-Path $env:RUNNER_TEMP 'MK61 installer check'
+          $process = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$destination") -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
+          python3 packaging/verify_install.py $destination
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $uninstaller = Join-Path $destination 'Uninstall.exe'
+          $process = Start-Process -FilePath $uninstaller -ArgumentList @('/S', "_?=$destination") -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Uninstaller failed: $($process.ExitCode)" }
+          if (Test-Path (Join-Path $destination 'bin/elektronika-mk61.exe')) { throw 'Uninstall left the executable behind' }
+      - name: Verify macOS disk image payload
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p build-package/mounted
+          hdiutil attach build-package/packages/*.dmg -mountpoint "$GITHUB_WORKSPACE/build-package/mounted" -nobrowse -readonly
+          trap 'hdiutil detach "$GITHUB_WORKSPACE/build-package/mounted"' EXIT
+          python3 packaging/verify_install.py build-package/mounted
+      - name: Include corresponding application source
+        run: git archive --format=tar.gz --prefix=elektronika-mk61/ --output=build-package/packages/elektronika-mk61-source.tar.gz HEAD
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            build-package/packages/*.zip
+            build-package/packages/*.exe
+            build-package/packages/*.dmg
+            build-package/packages/*source.tar.gz
+            build-package/packages/qt-sources/
+          if-no-files-found: error
+          retention-days: 14
+
+  flatpak:
+    name: package (flatpak-${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: x86_64, runner: ubuntu-24.04}
+          - {arch: aarch64, runner: ubuntu-24.04-arm}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Flatpak build tools and runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive flathub org.kde.Platform//6.11 org.kde.Sdk//6.11
+      - name: Build reviewed source in sandbox
+        run: |
+          mkdir -p build-flatpak
+          git archive --format=tar.gz --prefix=elektronika-mk61/ --output=build-flatpak/source.tar.gz HEAD
+          flatpak-builder --user --force-clean --repo=build-flatpak/repo build-flatpak/app packaging/io.github.lz1aam.elektronika-mk61.json
+      - name: Create and test local bundle
+        run: |
+          flatpak build-bundle build-flatpak/repo build-flatpak/elektronika-mk61-${{ matrix.arch }}.flatpak io.github.lz1aam.elektronika-mk61 --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive build-flatpak/*.flatpak
+          flatpak run --env=QT_QPA_PLATFORM=offscreen io.github.lz1aam.elektronika-mk61 --smoke-test
+          flatpak uninstall --user --noninteractive io.github.lz1aam.elektronika-mk61
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: flatpak-${{ matrix.arch }}
+          path: |
+            build-flatpak/*.flatpak
+            build-flatpak/source.tar.gz
+          if-no-files-found: error
+          retention-days: 14

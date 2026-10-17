@@ -49,7 +49,13 @@ set_tests_properties(core-microcode-smoke real-program-regression hardware-io
     portable-clock-and-batching portable-full-state keyboard-word-phase PROPERTIES
     LABELS "core;portable" TIMEOUT 120)
 
-# Only the Qt-independent core is exercised on Windows and macOS for now.
+if(TARGET elektronika-mk61)
+    add_test(NAME gui-startup-smoke COMMAND elektronika-mk61 --smoke-test)
+    set_tests_properties(gui-startup-smoke PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen" LABELS "gui" TIMEOUT 10)
+endif()
+
+# Detailed GUI interaction/rendering checks remain Linux-only.
 if(NOT TARGET elektronika-mk61 OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
     return()
 endif()
@@ -141,11 +147,6 @@ set_tests_properties(rapid-expanded-stack-input PROPERTIES
     TIMEOUT 20
 )
 
-add_test(NAME gui-startup-smoke COMMAND elektronika-mk61 --smoke-test)
-set_tests_properties(gui-startup-smoke PROPERTIES
-    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-    TIMEOUT 10
-)
 add_test(NAME gui-render-smoke
     COMMAND elektronika-mk61 --render
             ${CMAKE_CURRENT_BINARY_DIR}/pmk-render-smoke.png)

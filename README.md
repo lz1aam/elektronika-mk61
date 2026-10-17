@@ -6,7 +6,8 @@ calculator, written in C++20 and Qt 6.
 Current source version: **0.1.2**. See [release notes](CHANGELOG.md).
 
 The calculator core is a separate C++20 library with no Qt or Linux API
-dependency. The desktop application currently targets Linux.
+dependency. The desktop application currently targets Linux. Windows/macOS
+desktop deployment is being validated separately from the portable core.
 
 | Original display | Expanded four-row VFD stack |
 |:--:|:--:|
@@ -69,8 +70,8 @@ core before changing input contacts. The adapter itself reads no system clock.
 
 Build configurations cover GCC/Clang and MSVC. Linux desktop integration is
 enabled only on Linux; Qt targets use a Windows GUI executable or macOS app
-bundle on those systems. Windows/macOS deployment and ARM execution still
-require platform validation and dependency packaging.
+bundle on those systems. Windows/macOS deployment and ARM execution must be
+verified by their package jobs; core-only checks do not establish GUI support.
 
 ## Verification
 
@@ -85,8 +86,9 @@ cmake --install build-core --config Release --prefix core-install
 
 CI is configured to build, run these checks and install the development
 package on Ubuntu, Windows and macOS. Remote platform results must be checked
-after the workflow runs. Qt GUI checks are enabled only on Linux
-and require Qt 6 Test as well as Widgets (both supplied by `qt6-base-dev`):
+after the workflow runs. Detailed Qt GUI checks remain Linux-only and require
+Qt 6 Test as well as Widgets (both supplied by `qt6-base-dev`); GUI startup
+smoke tests are also registered for Windows/macOS when the app is built:
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
@@ -100,6 +102,10 @@ build only the application or libraries. See [test notes](tests/README.md)
 for coverage and reference provenance.
 
 ## Installation
+
+DEB/RPM, Flatpak, Windows ZIP/installer and macOS DMG preparation and validation
+are described in [Desktop packages](packaging/README.md). CI artifacts are
+review builds, not signed releases or proof of support for every distribution.
 
 Install for the current user:
 
