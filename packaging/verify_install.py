@@ -49,6 +49,10 @@ def main():
     roots = [bundle] if sys.platform == "darwin" else [prefix / "bin", notices]
     for root in roots:
         for path in root.rglob("*"):
+            # License provenance can legitimately contain upstream paths such
+            # as qtbase/tests/.../LICENSE; those are notices, not test binaries.
+            if path.is_relative_to(notices):
+                continue
             if path.name in forbidden or path.name.startswith("pmk-") and path.is_file():
                 raise RuntimeError(f"non-runtime file in package: {path}")
     env = os.environ.copy()

@@ -46,6 +46,7 @@ jobs:
           path: |
             build-package/packages/*.deb
             build-package/packages/*.rpm
+            build-package/packages/*.sha256
             build-package/packages/*source.tar.gz
           if-no-files-found: error
           retention-days: 14
@@ -154,6 +155,7 @@ jobs:
             build-package/packages/*.zip
             build-package/packages/*.exe
             build-package/packages/*.dmg
+            build-package/packages/*.sha256
             build-package/packages/*source.tar.gz
             build-package/packages/qt-sources/
           if-no-files-found: error
@@ -188,11 +190,14 @@ jobs:
           flatpak install --user --noninteractive build-flatpak/*.flatpak
           flatpak run --env=QT_QPA_PLATFORM=offscreen io.github.lz1aam.elektronika-mk61 --smoke-test
           flatpak uninstall --user --noninteractive io.github.lz1aam.elektronika-mk61
+          cd build-flatpak
+          sha256sum ./*.flatpak source.tar.gz > SHA256SUMS
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: flatpak-${{ matrix.arch }}
           path: |
             build-flatpak/*.flatpak
             build-flatpak/source.tar.gz
+            build-flatpak/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
