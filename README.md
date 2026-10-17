@@ -1,197 +1,127 @@
 # Elektronika MK-61 Emulator
 
-## Download for Linux, Windows and macOS
+A desktop emulator of the Soviet **Elektronika MK-61** programmable RPN
+calculator, built with C++20 and Qt 6. It executes the IK13xx microcode model
+rather than substituting modern floating-point calculator logic.
 
-[Download v0.1.2 test packages](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)
-— choose your OS and CPU from the download table. No compilation is needed.
+**[Download v0.1.2 test packages](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)**
+· [Changelog](CHANGELOG.md)
+· [Report a problem](https://github.com/lz1aam/elektronika-mk61/issues/new)
 
-This is a **pre-release for community testing**, not a stable release. Read the
-installation prerequisites and known security/signing limitations on that page.
-[Report test results or problems](https://github.com/lz1aam/elektronika-mk61/issues/new).
+The downloads are a **community-testing pre-release**, not a stable release.
+Windows/macOS bundles are unsigned and include Qt 6.9.3 with known security
+issues. Read the [prerequisites and limitations](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)
+before testing; use trusted test files only.
 
-Native Linux emulation of the Soviet **Elektronika MK-61** programmable RPN
-calculator, written in C++20 and Qt 6.
-
-Current source version: **0.1.2**. See [release notes](CHANGELOG.md).
-
-The calculator core is a separate C++20 library with no Qt or Linux API
-dependency. The desktop application currently targets Linux. Windows/macOS
-desktop deployment is being validated separately from the portable core.
-
-| Original display | Expanded four-row VFD stack |
+| Original single-row VFD | Expanded four-row stack |
 |:--:|:--:|
-| <img src="resources/screenshots/elektronika-mk61.png" alt="Elektronika MK-61 Emulator" width="360"> | <img src="resources/screenshots/elektronika-mk61-stack.png" alt="Elektronika MK-61 Emulator with expanded T/Z/Y/X display" width="360"> |
+| <img src="resources/screenshots/elektronika-mk61.png" alt="MK-61 emulator with original single-row display" width="360"> | <img src="resources/screenshots/elektronika-mk61-stack.png" alt="MK-61 emulator with expanded T/Z/Y/X display" width="360"> |
 
-The application executes the original IK13xx microcode model instead of using
-modern floating-point calculator logic. Its keyboard matrix, angle selector,
-and ИЛЦ2-12/8Л vacuum-fluorescent display are connected to that emulated
-hardware state. This is an independent, work-in-progress port; it is not an
-official release of PMK-Android, EMU145, or the original manufacturer.
+## Features
 
-## Current features
+- Microcode-based MK-61 execution: RPN stack, registers and keystroke programs.
+- Qt Widgets panel with mouse and physical-keyboard input.
+- Hardware-driven VFD rendering with an optional four-row `T/Z/Y/X` view.
+- Import/export of PMK-Android-style mnemonic text programs.
+- Save/resume of native calculator states (`.mk61state`).
+- Offline calculator operation; no Android runtime, JVM or WebView.
 
-- Native Qt Widgets interface with mouse and keyboard input.
-- MK-61 panel and calculator behavior.
-- Authentic microcode execution, RPN stack, registers, and program memory.
-- Hardware-driven VFD rendering and optional four-row `T/Z/Y/X` stack view.
-- Import and export of PMK-Android-style mnemonic text programs.
-- Save and resume complete native calculator states (`.mk61state`).
-- Linux desktop launcher and scalable application icon.
+## Download and install
 
-Only MK-61 is supported; there is no MK-54 mode or model selector.
+[Open the downloads page](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)
+and choose your OS and CPU architecture. No compilation is needed.
 
-The native core is derived from EMU145 commit
-`02a8286c8e839c4e325982ff4967e89025c6e626`; the behavioral and interface
-reference is PMK-Android commit
-`100eea1e325fcf85f0d029780b9c079793a73075`.
+| Platform | Packages | Before starting |
+|---|---|---|
+| Linux | Ubuntu/Debian DEB, Fedora RPM, Flatpak | Choose the matching distribution/CPU; other distributions can try Flatpak. |
+| Windows x64 | EXE installer or ZIP | Install the official VC++ x64 runtime linked on the release page if needed. Keep the complete ZIP directory. |
+| macOS | Separate Intel and Apple Silicon DMGs | Copy the app to Applications. The preview is not signed or notarized. |
 
-## Build
+Installation commands, exact target distributions and known issues are on the
+release page. These are project-built test packages, not packages accepted into
+official operating-system repositories. Automated build/startup checks have
+passed for the listed targets; native visual, input and file-dialog testing
+still needs community feedback.
 
-Requirements: CMake 3.20+, a C++20 compiler, Qt 6 Widgets development
-files (`qt6-base-dev` on Debian/Ubuntu), and the Qt SVG runtime module
-(`libqt6svg6`) for the application icon.
+To help, [report your results](https://github.com/lz1aam/elektronika-mk61/issues/new)
+with your OS version, CPU, package filename, display scaling and reproduction
+steps. Successful tests are useful too.
 
-```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
-./build/elektronika-mk61
-```
+## Using the calculator
 
-To build only the core, without Qt:
+Use the on-screen keys and switches, or these keyboard shortcuts:
 
-```sh
-cmake -S . -B build-core -DMK61_BUILD_GUI=OFF -DCMAKE_BUILD_TYPE=Release
-cmake --build build-core --config Release
-```
+| Input | Calculator action |
+|---|---|
+| `0–9`, `.` or `,` | Digits and decimal point |
+| `Enter` | MK-61 enter key |
+| `+`, `-`, `*`, `/` | Arithmetic keys |
+| `Backspace` or `Escape` | Clear key |
+| `F`, `K` | Function prefixes |
+| `R`, `G`, `D` | Radians, grads, degrees |
+| `F12` | Power on/off |
 
-For use in another CMake project, also configure with
-`-DMK61_INSTALL_DEVELOPMENT=ON`, then install to your chosen prefix. Consumers
-can use `find_package(MK61 CONFIG REQUIRED)` and link `MK61::Core`; the package
-provides its C++20 requirement and hardware-library dependency automatically.
-Set `CMAKE_PREFIX_PATH` to that installation prefix when configuring a consumer.
-Development files are excluded from the normal desktop installation.
+Click the powered display to switch between the original single-row view and
+the four-row stack. `X` is at the bottom, with `Y`, `Z` and `T` above it.
 
-The core advances by explicit microticks. An optional `pmk::RealtimeClock`
-adapter converts monotonic elapsed nanoseconds to the 168 kHz target and
-carries fractional ticks between calls. It caps each elapsed interval at
-100 ms to bound work after a host suspension. Frontends should advance the
-core before changing input contacts. The adapter itself reads no system clock.
+Click the printed **ВКЛ** caption beside the power switch to open the file menu.
+Program import/export and calculator-state save/load are separate actions.
+Native `.mk61state` files restore calculator contents and the angle switch;
+they are **not compatible with Android Java `.pmk` state files**.
 
-Build configurations cover GCC/Clang and MSVC. Linux desktop integration is
-enabled only on Linux; Qt targets use a Windows GUI executable or macOS app
-bundle on those systems. Windows/macOS deployment and ARM execution must be
-verified by their package jobs; core-only checks do not establish GUI support.
+## Build from source on Linux
 
-## Verification
+Requirements: CMake 3.20+, a C++20 compiler and Qt 6.4+ Widgets development files.
+On Debian/Ubuntu, install `build-essential`, `cmake`, `qt6-base-dev` and
+`libqt6svg6` (the SVG icon runtime).
 
-Portable core checks require no Qt:
-
-```sh
-cmake -S . -B build-core -DMK61_BUILD_GUI=OFF -DBUILD_TESTING=ON -DMK61_INSTALL_DEVELOPMENT=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
-cmake --build build-core --config Release --parallel 2
-ctest --test-dir build-core -C Release -L core --output-on-failure --no-tests=error
-cmake --install build-core --config Release --prefix core-install
-```
-
-CI is configured to build, run these checks and install the development
-package on Ubuntu, Windows and macOS. Remote platform results must be checked
-after the workflow runs. Detailed Qt GUI checks remain Linux-only and require
-Qt 6 Test as well as Widgets (both supplied by `qt6-base-dev`); GUI startup
-smoke tests are also registered for Windows/macOS when the app is built:
-
-```sh
-cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel 2
-ctest --test-dir build -C Release --output-on-failure --no-tests=error
-```
-
-GUI checks use Qt's offscreen platform; they do not establish native desktop
-or visual fidelity on other operating systems. Set `-DBUILD_TESTING=OFF` to
-build only the application or libraries. See [test notes](tests/README.md)
-for coverage and reference provenance.
-
-## Installation
-
-DEB/RPM, Flatpak, Windows ZIP/installer and macOS DMG preparation and validation
-are described in [Desktop packages](packaging/README.md). CI artifacts are
-review builds, not signed releases or proof of support for every distribution.
-
-Install for the current user:
+From a source checkout, the convenience installer builds and installs for the
+current user:
 
 ```sh
 ./install.sh
 ```
 
-The installer keeps its optimized build in `build-release/`, independently
-of the manual `build/` directory shown above.
+It uses `build-release/` and installs under `~/.local`, including the desktop
+launcher, icon and licenses. Desktop integration follows freedesktop/XDG
+conventions and does not require a particular Linux desktop environment.
+If a session keeps an old menu entry, sign out and back in.
 
-This installs the executable as `~/.local/bin/elektronika-mk61`, the launcher
-under `~/.local/share/applications`, and the icon under
-`~/.local/share/icons/hicolor`. License and attribution files are installed
-under `~/.local/share/doc/elektronika-mk61`, including the bundled font licence.
-The desktop and icon caches are refreshed
-automatically when the corresponding cache utilities are available. The
-launcher follows the freedesktop/XDG layout and does not depend on GNOME, KDE
-Plasma, XFCE, LXQt, or another particular desktop environment. Menus normally
-notice the new entry automatically; if a running session keeps an old menu
-cache, sign out and back in once.
-
-The application can always be started directly with:
+Start the installed application directly with:
 
 ```sh
 "$HOME/.local/bin/elektronika-mk61"
 ```
 
-The launcher is generated during installation, so its absolute executable
-path follows the selected prefix. To install under another absolute prefix,
-pass it as the first argument, for example `./install.sh /opt/elektronika-mk61`
-(a system prefix may require administrator privileges).
+To remove this source-based installation, run `./uninstall.sh`.
+Remove DEB/RPM/Flatpak packages through their package manager instead.
 
-Uninstall the current-user installation with:
+For a manual application-only build without installation:
 
 ```sh
-./uninstall.sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+cmake --build build --config Release --parallel 2
+./build/elektronika-mk61
 ```
 
-Both scripts are desktop-independent convenience wrappers. The equivalent
-standard CMake installation remains available:
+## Development
 
-```sh
-cmake --install build --prefix "$HOME/.local"
-```
+The calculator core is a Qt-independent C++20 library. See:
 
-## Controls
+- [Contributing and developer guide](CONTRIBUTING.md) — build/test commands,
+  reusable core, timing and state-format notes.
+- [Verification](tests/README.md) — coverage and reference provenance.
+- [Desktop packaging](packaging/README.md) — native package builds, Qt deployment
+  and platform limitations.
 
-Digits, decimal point/comma, Enter, `+`, `-`, `*`, `/`, Backspace/Escape,
-`F`, and `K` map to calculator keys. `R`, `G`, and `D` select radians, grads,
-and degrees; `F12` toggles power. Click the powered display to toggle the
-four-row stack view.
+## License and credits
 
-Click the printed `ВКЛ` caption beside the power switch to open the file menu.
-Use **Save calculator state…** and **Load calculator state…** for `.mk61state`
-files. Loading restores the machine and angle switch and powers the interface
-on; desktop keys start released. The current window layout is retained.
-
-Native states preserve processor registers, circulating memory, program,
-microtick phase and VFD state. Their versioned little-endian format includes
-ROM identification and a corruption checksum; invalid files are rejected
-before replacing the calculator state. Version 2 also preserves the keyboard
-word sampled for the current four-bit cycle. Version 1 files can be loaded,
-but cannot exactly restore that previously unrecorded input word; they are
-saved as version 2 afterward. These files are distinct from Android
-Java `.pmk` files, which are not currently supported. Text program import and
-export remain separate menu actions.
-
-Keyboard contacts are sampled once per four-bit input word, with no key-event
-queue. A contact that is not sampled is not replayed later; the processor
-microcode still determines which sampled keys are acted on.
-
-## License
-
-The project is licensed under the [GNU GPL version 3](LICENSE). It contains
-adapted GPL-3.0 code and assets from
+Licensed under the [GNU GPL version 3](LICENSE), with adapted code/assets from
 [EMU145](https://github.com/fixelsan/emu145) and
-[PMK-Android](https://github.com/xvadim/pmk-android). EMU145's ROM-bearing files
-carry GPL-3.0 headers, while their older chain of title is not independently
-documented; read [NOTICE](NOTICE) before distributing binaries. Contributions
-are described in [CONTRIBUTING.md](CONTRIBUTING.md).
+[PMK-Android](https://github.com/xvadim/pmk-android). Bundled DejaVu fonts retain
+their [own license](resources/fonts/DejaVu-LICENSE.txt).
+
+Read [NOTICE](NOTICE) for attribution and historical ROM/font provenance
+qualifications before redistributing. This is an independent project, not an
+official release of or an endorsement by those upstream projects or the
+original manufacturer.

@@ -18,7 +18,9 @@ registered with CTest.
 Linux Qt builds additionally register nine offscreen GUI/render checks,
 including expanded-stack input, file-state actions, electrode rendering,
 startup and HiDPI rendering. Use `ctest --test-dir build -C Release --output-on-failure`.
-These tests are not enabled for Windows/macOS GUI builds.
+The detailed interaction/rendering tests are Linux-only. Windows/macOS GUI
+builds register the startup smoke test in addition to the six portable checks;
+package CI also starts the deployed application through its native backend.
 
 Behavioral program sources are cited next to each fixture in
 `program_regression.cpp`. The VFD reference in `vfd_reference.hpp` transcribes
