@@ -24,6 +24,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # CPack stages through DESTDIR. Keep /usr in launchers, never a staging path.
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
     set(CPACK_SET_DESTDIR ON)
+    # Debian minimal images exclude most /usr/share/doc files, but preserve
+    # copyright. Include ALL project/ROM/font terms there, not just a summary.
+    file(READ "${PROJECT_SOURCE_DIR}/LICENSE" mk61_gpl)
+    file(READ "${PROJECT_SOURCE_DIR}/NOTICE" mk61_notice)
+    file(READ "${PROJECT_SOURCE_DIR}/resources/fonts/DejaVu-LICENSE.txt" mk61_fonts)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/copyright.in"
+        "${PROJECT_BINARY_DIR}/copyright" @ONLY)
+    install(FILES "${PROJECT_BINARY_DIR}/copyright"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/${PROJECT_NAME}")
     set(CPACK_GENERATOR "TGZ")
     set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
     set(CPACK_DEBIAN_PACKAGE_SECTION "science")
@@ -41,6 +50,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CPACK_RPM_PACKAGE_REQUIRES "${MK61_RPM_QT_SVG_PACKAGE}")
     # Minimal RPM images may exclude %doc; licenses must still be installed.
     set(CPACK_RPM_USER_FILELIST
+        "%license /usr/share/doc/${PROJECT_NAME}/copyright"
         "%license /usr/share/doc/${PROJECT_NAME}/LICENSE"
         "%license /usr/share/doc/${PROJECT_NAME}/NOTICE"
         "%license /usr/share/doc/${PROJECT_NAME}/DejaVu-LICENSE.txt")

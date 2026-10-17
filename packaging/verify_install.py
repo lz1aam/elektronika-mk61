@@ -26,11 +26,20 @@ def main():
             required += [prefix / "bin" / "Qt6Core.dll", notices / "Qt" / "SOURCES.json"]
         else:
             required += [prefix / "share/icons/hicolor/scalable/apps/elektronika-mk61.svg"]
+            copyright_file = notices / "copyright"
+            terms = copyright_file.read_text(encoding="utf-8")
+            if not all(marker in terms for marker in (
+                "GNU GENERAL PUBLIC LICENSE", "historical chain of title",
+                "Bundled DejaVu/Bitstream font license")):
+                raise RuntimeError("combined copyright file is missing license/attribution terms")
+            required += [copyright_file]
             desktop = prefix / "share/applications/elektronika-mk61.desktop"
             contents = desktop.read_text(encoding="utf-8")
             if "Exec=/usr/bin/elektronika-mk61\n" not in contents:
                 raise RuntimeError("package launcher contains the wrong installation prefix")
-    required += [executable, notices / "LICENSE", notices / "NOTICE", notices / "DejaVu-LICENSE.txt"]
+    required += [executable]
+    if sys.platform == "darwin" or os.name == "nt":
+        required += [notices / "LICENSE", notices / "NOTICE", notices / "DejaVu-LICENSE.txt"]
     for item in required:
         if not item.exists():
             raise RuntimeError(f"missing installed file: {item}")

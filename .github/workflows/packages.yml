@@ -66,7 +66,6 @@ jobs:
         shell: bash
     env:
       QT_VERSION: '6.9.3'
-      QT_ROOT_DIR: ${{ github.workspace }}/Qt/6.9.3/${{ matrix.qt_arch }}
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Install Qt SDK
@@ -79,7 +78,18 @@ jobs:
           fi
           "$aqt_python" -m pip install aqtinstall==3.3.0
           "$aqt_python" -m aqt install-qt '${{ matrix.qt_host }}' desktop "$QT_VERSION" '${{ matrix.qt_arch }}' --outputdir Qt --archives qtbase qtsvg qtimageformats
-          echo "$QT_ROOT_DIR/bin" >> "$GITHUB_PATH"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          configs = list(Path('Qt').rglob('Qt6Config.cmake'))
+          if len(configs) != 1:
+              raise RuntimeError(f'Expected one Qt SDK, found {configs}')
+          prefix = configs[0].resolve().parents[3]
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write(f'QT_ROOT_DIR={prefix}\n')
+          with open(os.environ['GITHUB_PATH'], 'a') as output:
+              output.write(f'{prefix / "bin"}\n')
+          PY
       - name: Collect exact Qt source and license notices
         run: python3 packaging/prepare_qt_sources.py --version "$QT_VERSION" --sources build-package/packages/qt-sources --notices build-package/qt-notices
       - name: Configure desktop and deployment
