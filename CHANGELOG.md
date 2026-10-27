@@ -1,9 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.1.3 — 2026-10-27
 
 - Allow switching between single-row and four-row display views while powered
   off, without switching on the display or changing the emulated hardware state.
+- Remove redundant F/K indicator assignments without changing key handling.
+- Add regression coverage for power-off view changes, a dark display, restored
+  window dimensions and unchanged serialized processor state.
+- Reorganize user/developer documentation and make community package downloads
+  easier to find. ROM contents, processor algorithms and panel artwork are unchanged.
+
+This remains a community-testing pre-release. Windows/macOS bundles retain
+the Qt 6.9.3 security limitations and unsigned/unnotarized status described
+on the release page; this revision does not resolve those dependency issues.
 
 ## 0.1.2
 
