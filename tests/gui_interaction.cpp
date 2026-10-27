@@ -8,6 +8,42 @@ class GuiInteractionTest final : public QObject {
     Q_OBJECT
 
 private slots:
+    void stackViewWhilePoweredOff() {
+        CalculatorWidget widget;
+        widget.resize(480, 800);
+        widget.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&widget));
+        const QSize compactSize = widget.size();
+        const auto angle = widget.angleMode();
+        widget.setStackDisplayExpanded(true);
+        const QSize expandedSize = widget.size();
+        QTest::keyClick(&widget, Qt::Key_F12);
+        QVERIFY(!widget.isPowered());
+
+        for (const bool expanded : {false, true, false}) {
+            QTest::mouseClick(&widget, Qt::LeftButton, Qt::NoModifier, {240, 48});
+            QCOMPARE(widget.isStackDisplayExpanded(), expanded);
+            QCOMPARE(widget.size(), expanded ? expandedSize : compactSize);
+            QVERIFY(!widget.isPowered());
+            QVERIFY(!widget.hasActiveKeyContact());
+            QCOMPARE(widget.angleMode(), angle);
+            const QImage display = widget.grab(
+                QRect(0, 0, 480, expanded ? 288 : 96)).toImage();
+            QVERIFY(!display.isNull());
+            int luminousPixels = 0;
+            for (int y = 0; y < display.height(); ++y)
+                for (int x = 0; x < display.width(); ++x) {
+                    const QColor colour = display.pixelColor(x, y);
+                    luminousPixels += colour.green() > 110 && colour.blue() > 110 &&
+                                      colour.green() > colour.red() * 1.4;
+                }
+            QCOMPARE(luminousPixels, 0);
+        }
+        QTest::keyClick(&widget, Qt::Key_F12);
+        QVERIFY(widget.isPowered());
+        QCOMPARE(widget.size(), compactSize);
+    }
+
     void contactOwnership() {
         CalculatorWidget widget;
         widget.show();

@@ -400,7 +400,8 @@ void CalculatorWidget::toggleStackDisplay() {
 }
 
 void CalculatorWidget::setStackDisplayExpanded(bool expanded) {
-    if (!powered_ || stackDisplayExpanded_ == expanded)
+    // Layout is independent of power; VFD excitation still follows powered_.
+    if (stackDisplayExpanded_ == expanded)
         return;
     if (expanded) {
         compactSize_ = size();
@@ -632,14 +633,8 @@ void CalculatorWidget::pressKeyIndex(int index) {
     advanceEmulationToNow();
     pressed_ = index;
     const auto physicalKey = Keys[index].physicalKey;
-    const bool wasF = fIndicator_;
-    const bool wasK = kIndicator_;
     fIndicator_ = physicalKey == pmk::PhysicalKey::F;
     kIndicator_ = physicalKey == pmk::PhysicalKey::K;
-    if (wasF && physicalKey == pmk::PhysicalKey::F)
-        fIndicator_ = true;
-    if (wasK && physicalKey == pmk::PhysicalKey::K)
-        kIndicator_ = true;
     const auto matrix = pmk::matrixKey(physicalKey);
     core_.pressMatrixKey(matrix.row, matrix.column);
     update();
@@ -663,8 +658,7 @@ void CalculatorWidget::mousePressEvent(QMouseEvent* event) {
     QPointF logical = toLogical(event->position());
     const int activeDisplayHeight = stackDisplayExpanded_
         ? ExpandedDisplayHeight : DisplayHeight;
-    if (powered_ && QRectF(0, 0, LogicalWidth, activeDisplayHeight)
-                        .contains(logical)) {
+    if (QRectF(0, 0, LogicalWidth, activeDisplayHeight).contains(logical)) {
         toggleStackDisplay();
         event->accept();
         return;

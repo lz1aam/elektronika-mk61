@@ -32,6 +32,15 @@ int main(int argc, char** argv) {
         const auto path = directory.filePath("calculator.mk61state");
         widget.saveNativeStateFile(path);
         widget.setPowered(false);
+        const auto poweredOffState = widget.core_.saveState();
+        widget.setStackDisplayExpanded(false);
+        if (widget.isPowered() || widget.isStackDisplayExpanded() ||
+            widget.core_.saveState() != poweredOffState)
+            throw std::runtime_error("collapsing while off changed power or hardware state");
+        widget.setStackDisplayExpanded(true);
+        if (widget.isPowered() || !widget.isStackDisplayExpanded() ||
+            widget.core_.saveState() != poweredOffState)
+            throw std::runtime_error("expanding while off changed power or hardware state");
         widget.loadNativeStateFile(path);
         if (!widget.isPowered() || !widget.isStackDisplayExpanded() ||
             widget.angleMode() != pmk::AngleMode::Degrees ||
