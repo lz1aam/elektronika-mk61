@@ -4,13 +4,13 @@ A desktop emulator of the Soviet **Elektronika MK-61** programmable RPN
 calculator, built with C++20 and Qt 6. It executes the IK13xx microcode model
 rather than substituting modern floating-point calculator logic.
 
-**[Download v0.1.2 test packages](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)**
+**[Download test packages](https://github.com/lz1aam/elektronika-mk61/releases)**
 · [Changelog](CHANGELOG.md)
 · [Report a problem](https://github.com/lz1aam/elektronika-mk61/issues/new)
 
 The downloads are a **community-testing pre-release**, not a stable release.
 Windows/macOS bundles are unsigned and include Qt 6.9.3 with known security
-issues. Read the [prerequisites and limitations](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)
+issues. Read the [prerequisites and limitations](https://github.com/lz1aam/elektronika-mk61/releases)
 before testing; use trusted test files only.
 
 | Original single-row VFD | Expanded four-row stack |
@@ -28,7 +28,7 @@ before testing; use trusted test files only.
 
 ## Download and install
 
-[Open the downloads page](https://github.com/lz1aam/elektronika-mk61/releases/tag/v0.1.2)
+[Open the downloads page](https://github.com/lz1aam/elektronika-mk61/releases)
 and choose your OS and CPU architecture. No compilation is needed.
 
 | Platform | Packages | Before starting |
@@ -61,8 +61,9 @@ Use the on-screen keys and switches, or these keyboard shortcuts:
 | `R`, `G`, `D` | Radians, grads, degrees |
 | `F12` | Power on/off |
 
-Click the powered display to switch between the original single-row view and
-the four-row stack. `X` is at the bottom, with `Y`, `Z` and `T` above it.
+Click the display to switch between the original single-row view and the
+four-row stack, even while powered off. Changing the view does not switch on
+the display. `X` is at the bottom, with `Y`, `Z` and `T` above it.
 
 Click the printed **ВКЛ** caption beside the power switch to open the file menu.
 Program import/export and calculator-state save/load are separate actions.
