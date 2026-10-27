@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Allow switching between single-row and four-row display views while powered
+  off, without switching on the display or changing the emulated hardware state.
+
 ## 0.1.2
 
 - Keep each sampled keyboard word stable through its four serial bit phases,
